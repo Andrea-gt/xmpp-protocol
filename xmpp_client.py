@@ -46,6 +46,17 @@ class XMPPClient(slixmpp.ClientXMPP):
         self.authenticated = True  # Set flag to true on successful login
         print("Login successful!")
 
+        # === IMPORTANT: ONLY FOR TESTING PURPOSES ===
+        # This section of the code is used for testing functionality.
+        # It will be removed or modified in the final implementation.
+        # Wait for user input to log out
+        while self.authenticated:
+            command = input("Enter a command (type 'logout' to log out): ")
+            if command.lower() == 'logout':
+                self.logout()
+                break  # Exit the loop after logging out
+        # ============================================
+
     def message(self, msg):
         """
         Handler for incoming messages.
@@ -87,6 +98,16 @@ class XMPPClient(slixmpp.ClientXMPP):
             self.process(forever=False)  # Start the event loop
         except Exception as e:
             print(f"Error during login: {e}")
+
+    def logout(self):
+        """
+        Logs out from the XMPP server.
+
+        This method disconnects the client and prints a logout confirmation.
+        """
+        self.send_presence(ptype='unavailable')  # Send unavailable presence
+        self.disconnect()  # Disconnect from the server
+        print("Logged out successfully.")
 
 # Create a function to initialize and run the client
 def run_client(jid, password):
