@@ -1,30 +1,45 @@
 import slixmpp
-from slixmpp.exceptions import IqError, IqTimeout
 
 class XMPPClient(slixmpp.ClientXMPP):
     def __init__(self, jid, password):
         super().__init__(jid, password)
 
-        self.add_event_handler("session_start", self.start)
+        self.authenticated = False  # Flag to track authentication status
+        self.add_event_handler("session_start", self.session_start)
         self.add_event_handler("message", self.message)
-        
-    async def start(self, event):
-        self.send_presence()
-        await self.get_roster()
+        self.add_event_handler("session_bind", self.bind_success)
+        self.add_event_handler("failed_auth", self.auth_failure)
 
-    async def message(self, msg):
+    def session_start(self, event):
+        self.send_presence()
+        self.get_roster()
+        self.authenticated = True  # Set flag to true on successful login
+        print("Login successful!")
+
+    def message(self, msg):
         print(f"Message from {msg['from']}: {msg['body']}")
 
-    async def login(self):
+    def bind_success(self, event):
+        print("Successfully bound to the XMPP server.")
+
+    def auth_failure(self, event):
+        print("Login failed: Incorrect JID or password.")
+        self.disconnect() 
+
+    def login(self):
         try:
-            await self.connect(address=('ws://alumchat.lol:7070/ws/', 5222), disable_starttls=True) 
-            print("Logged in successfully.")
-        except IqError as e:
-            print(f"Error logging in: {e}")
-        except IqTimeout:
-            print("Login timed out.")
+            self.connect(address=("alumchat.lol", 7070), disable_starttls=True)
+            self.process(forever=False)  # Start the event loop
+        except Exception as e:
+            print(f"Error during login: {e}")
 
 # Create a function to initialize and run the client
 def run_client(jid, password):
     client = XMPPClient(jid, password)
-    client.loop.run_until_complete(client.login())
+    client.login()  # Call the login method to connect and start the loop
+
+if __name__ == "__main__":
+    # Replace with your JID and password
+    jid = input("Enter your JID: ")
+    password = input("Enter your password: ")
+    run_client(jid, password)
