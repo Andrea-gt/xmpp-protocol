@@ -4,6 +4,7 @@ import { CssBaseline, ThemeProvider } from "@mui/material";
 import { createTheme } from "@mui/material/styles";
 import { themeSettings } from './theme';
 import { useSelector } from "react-redux";
+import { XMPPProvider } from "./context/XMPPContext";
 
 // Import pages
 import Forms from "./pages/Login";
@@ -21,6 +22,7 @@ const App = () => {
       <ThemeProvider theme={theme}>
         <BrowserRouter>
           <CssBaseline />
+          <XMPPProvider>
           <Routes>
             <Route path="/" element={<Forms />} />
             <Route 
@@ -30,6 +32,7 @@ const App = () => {
               } 
             />
           </Routes>
+          </XMPPProvider>
         </BrowserRouter>
       </ThemeProvider>
     </div>

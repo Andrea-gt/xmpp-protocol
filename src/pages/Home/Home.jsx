@@ -30,6 +30,14 @@ const Home = () => {
         }}
       >
       <Navbar />
+      <Box
+        display="flex"
+        flexDirection="row"
+        gap="50px"
+        sx={{padding: '5rem',}}
+      >
+        Test
+      </Box>
       </Box>
     </FlexBetween>
   );

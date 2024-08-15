@@ -17,6 +17,7 @@ import { useNavigate } from "react-router-dom";
 import { setLogin } from '../../state';
 import AccountCircleOutlinedIcon from '@mui/icons-material/AccountCircleOutlined';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import { useXMPP } from '../../context/XMPPContext';
 
 const loginSchema = yup.object().shape({
   username: yup.string().required("*Required"),
@@ -28,12 +29,14 @@ const Login = () => {
   const dispatch = useDispatch();
   const [errorMessage, setErrorMessage] = React.useState('');
   const navigate = useNavigate();
+  const { updateClient } = useXMPP();
 
   const handleSubmit = async (values) => {
     const { username, password } = values;
     console.log(username, password);
     try {
       const connection = await connectXMPP(username, password);
+      updateClient(connection);
       dispatch(setLogin({ user: username }));
       setErrorMessage(''); // Clear any previous error message
       navigate("/home");

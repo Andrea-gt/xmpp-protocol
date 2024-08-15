@@ -15,9 +15,11 @@ import FlexBetween from '../../FlexBetween';
 import { useSelector } from 'react-redux';
 import PersonAdd from '@mui/icons-material/PersonAdd';
 import Logout from '@mui/icons-material/Logout';
+import DeleteIcon from '@mui/icons-material/Delete';
 import { useNavigate } from "react-router-dom";
 import { setLogout } from '../../state';
 import { useDispatch } from 'react-redux';
+import { useXMPP } from '../../context/XMPPContext';
 
 // Styled Badge Component
 const StyledBadge = styled(Badge)(({ theme }) => ({
@@ -56,6 +58,7 @@ const Navbar = () => {
   const [anchorEl, setAnchorEl] = useState(null);
   const open = Boolean(anchorEl);
   const navigate = useNavigate();
+  const { xmppClient } = useXMPP(); 
 
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -67,9 +70,9 @@ const Navbar = () => {
 
   const handleLogout = async () => {
     try {
-      if (client) {
+      if (xmppClient) {
         console.log('Stopping connection in xmpp'); // Log the error for debugging
-        await client.stop(); // Stop the XMPP client
+        await xmppClient.stop();
       }
       dispatch(setLogout()); // Dispatch the logout action
       handleClose(); // Close the menu
@@ -141,11 +144,15 @@ const Navbar = () => {
         >
           <MenuItem onClick={handleClose}>
             <PersonAdd fontSize="small" sx={{ marginRight: 1 }} />
-            Add Contact
+            Add contact
           </MenuItem>
           <MenuItem onClick={handleLogout}>
             <Logout fontSize="small" sx={{ marginRight: 1 }} />
             Logout
+          </MenuItem>
+          <MenuItem onClick={handleClose}>
+            <DeleteIcon fontSize="small" sx={{ marginRight: 1 }} />
+            Delete account
           </MenuItem>
         </Menu>
       </Box>
