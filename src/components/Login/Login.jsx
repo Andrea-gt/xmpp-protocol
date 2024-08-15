@@ -28,8 +28,10 @@ const Login = () => {
   const dispatch = useDispatch();
   const [errorMessage, setErrorMessage] = React.useState('');
   const navigate = useNavigate();
+
   const handleSubmit = async (values) => {
     const { username, password } = values;
+    console.log(username, password);
     try {
       const connection = await connectXMPP(username, password);
       dispatch(setLogin({ user: username }));

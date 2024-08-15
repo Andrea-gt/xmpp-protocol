@@ -9,6 +9,8 @@ import { useSelector } from "react-redux";
 import Forms from "./pages/Login";
 import Home from "./pages/Home";
 
+// Context
+
 const App = () => {
   const user = useSelector((state) => state.user);
   const mode = useSelector((state) => state.mode);
