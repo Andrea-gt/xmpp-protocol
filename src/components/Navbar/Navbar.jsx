@@ -100,7 +100,11 @@ const Navbar = () => {
     try {
       await xmppClient.send(deletionRequest);
       console.log('Account deletion request sent');
-      await xmppClient.stop().catch(console.error); // Stop the client after the request
+
+      // Optionally wait a bit to ensure the request is processed
+      await new Promise(resolve => setTimeout(resolve, 1000)); // 2-second delay
+
+      await xmppClient.stop(); // Stop the client after the request
       dispatch(setLogout()); // Optionally, log out the user from the app
       navigate('/'); // Redirect to home or login page
     } catch (error) {
