@@ -1,7 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
-import authReducer from "./state";
 import { configureStore } from "@reduxjs/toolkit";
 import { Provider } from "react-redux";
 import {
@@ -9,16 +8,19 @@ import {
   persistReducer,
   FLUSH,
   REHYDRATE,
-  PAUSE, 
+  PAUSE,
   PERSIST,
   PURGE,
   REGISTER
 } from "redux-persist";
 import storage from "redux-persist/lib/storage";
 import { PersistGate } from "redux-persist/integration/react";
+import chatReducer from "./state";
+
+import.meta.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
 
 const persistConfig = { key: "root", storage, version: 1 };
-const persistedReducer = persistReducer(persistConfig, authReducer);
+const persistedReducer = persistReducer(persistConfig, chatReducer);
 const store = configureStore({
   reducer: persistedReducer,
   middleware: (getDefaultMiddleware) => 

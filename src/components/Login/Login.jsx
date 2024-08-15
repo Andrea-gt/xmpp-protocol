@@ -5,28 +5,40 @@ import {
   useTheme,
   Button,
   TextField,
-  InputAdornment
+  InputAdornment,
+  Alert,
 } from "@mui/material";
 import FlexBetween from '../../FlexBetween';
-import { Formik, Form, Field, ErrorMessage } from "formik";
+import { Formik, Form, Field } from "formik";
 import * as yup from "yup";
-
+import { connectXMPP } from '../../utils/xmppClient';
+import { useDispatch } from 'react-redux';
+import { useNavigate } from "react-router-dom";
+import { setLogin } from '../../state';
 import AccountCircleOutlinedIcon from '@mui/icons-material/AccountCircleOutlined';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 
 const loginSchema = yup.object().shape({
   username: yup.string().required("*Required"),
-  password: yup.string().required("*Required")
+  password: yup.string().required("*Required"),
 });
 
 const Login = () => {
   const { palette } = useTheme();
-
-  const handleSubmit = (values) => {
+  const dispatch = useDispatch();
+  const [errorMessage, setErrorMessage] = React.useState('');
+  const navigate = useNavigate();
+  const handleSubmit = async (values) => {
     const { username, password } = values;
-    // Handle login logic here, e.g., authenticate with XMPP
-    console.log("Username:", username);
-    console.log("Password:", password);
+    try {
+      const connection = await connectXMPP(username, password);
+      dispatch(setLogin({ user: username }));
+      setErrorMessage(''); // Clear any previous error message
+      navigate("/home");
+    } catch (error) {
+      console.error("Login failed:", error);
+      setErrorMessage("Login failed. Please check your username and password."); // Set the error message
+    }
   };
 
   return (
@@ -62,72 +74,74 @@ const Login = () => {
           </Typography>
         </Box>
 
-        <Box sx={{ width: "60%"}}>
-        <Formik
-          initialValues={{ username: '', password: '' }}
-          validationSchema={loginSchema}
-          onSubmit={handleSubmit}
-        >
-          {({ handleSubmit, isValid, dirty }) => (
-            <Form onSubmit={handleSubmit}>
-              <Box display="flex" flexDirection="column" gap="20px">
-                <Field name="username">
-                  {({ field, meta }) => (
-                    <TextField
-                      {...field}
-                      label="Username"
-                      variant="outlined"
-                      fullWidth
-                      margin="normal"
-                      error={meta.touched && Boolean(meta.error)}
-                      helperText={meta.touched && meta.error}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <AccountCircleOutlinedIcon fontSize="small" />
-                          </InputAdornment>
-                        ),
-                      }}
-                    />
-                  )}
-                </Field>
+        {errorMessage && <Alert severity="error">{errorMessage}</Alert>}
 
-                <Field name="password">
-                  {({ field, meta }) => (
-                    <TextField
-                      {...field}
-                      label="Password"
-                      type="password"
-                      variant="outlined"
-                      fullWidth
-                      margin="normal"
-                      error={meta.touched && Boolean(meta.error)}
-                      helperText={meta.touched && meta.error}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <LockOutlinedIcon fontSize="small" />
-                          </InputAdornment>
-                        ),
-                      }}
-                    />
-                  )}
-                </Field>
+        <Box sx={{ width: "60%" }}>
+          <Formik
+            initialValues={{ username: '', password: '' }}
+            validationSchema={loginSchema}
+            onSubmit={handleSubmit}
+          >
+            {({ handleSubmit, isValid, dirty }) => (
+              <Form onSubmit={handleSubmit}>
+                <Box display="flex" flexDirection="column" gap="20px">
+                  <Field name="username">
+                    {({ field, meta }) => (
+                      <TextField
+                        {...field}
+                        label="Username"
+                        variant="outlined"
+                        fullWidth
+                        margin="normal"
+                        error={meta.touched && Boolean(meta.error)}
+                        helperText={meta.touched && meta.error}
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <AccountCircleOutlinedIcon fontSize="small" />
+                            </InputAdornment>
+                          ),
+                        }}
+                      />
+                    )}
+                  </Field>
 
-                <Button 
-                  type="submit"
-                  variant="contained"
-                  color="primary"
-                  fullWidth
-                  sx={{ marginTop: '16px' }}
-                  disabled={!isValid || !dirty}
-                >
-                  Login
-                </Button>
-              </Box>
-            </Form>
-          )}
-        </Formik>
+                  <Field name="password">
+                    {({ field, meta }) => (
+                      <TextField
+                        {...field}
+                        label="Password"
+                        type="password"
+                        variant="outlined"
+                        fullWidth
+                        margin="normal"
+                        error={meta.touched && Boolean(meta.error)}
+                        helperText={meta.touched && meta.error}
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <LockOutlinedIcon fontSize="small" />
+                            </InputAdornment>
+                          ),
+                        }}
+                      />
+                    )}
+                  </Field>
+
+                  <Button 
+                    type="submit"
+                    variant="contained"
+                    color="primary"
+                    fullWidth
+                    sx={{ marginTop: '16px' }}
+                    disabled={!isValid || !dirty}
+                  >
+                    Login
+                  </Button>
+                </Box>
+              </Form>
+            )}
+          </Formik>
         </Box>
       </Box>
     </FlexBetween>
