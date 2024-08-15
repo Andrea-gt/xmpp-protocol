@@ -21,6 +21,7 @@ import { setLogout } from '../../state';
 import { useDispatch } from 'react-redux';
 import { useXMPP } from '../../context/XMPPContext';
 import { xml } from '@xmpp/client';
+import AddContact from '../AddContact/AddContact';
 
 // Styled Badge Component
 const StyledBadge = styled(Badge)(({ theme }) => ({
@@ -57,6 +58,7 @@ const Navbar = () => {
   const dispatch = useDispatch();
   const user = useSelector((state) => state.user); // Retrieve username from Redux store
   const [anchorEl, setAnchorEl] = useState(null);
+  const [openAddContact, setOpenAddContact] = useState(false);
   const open = Boolean(anchorEl);
   const navigate = useNavigate();
   const { xmppClient } = useXMPP(); 
@@ -111,6 +113,11 @@ const Navbar = () => {
       console.error('Failed to send account deletion request:', error);
       alert('Failed to delete the account. Please try again.');
     }
+  };
+
+  const handleAddContact = () => {
+    handleClose(); // Close the menu
+    setOpenAddContact(true); // Open the AddContact modal
   };
 
   return (
@@ -172,7 +179,7 @@ const Navbar = () => {
           transformOrigin={{ horizontal: 'right', vertical: 'top' }}
           anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
         >
-          <MenuItem onClick={handleClose}>
+          <MenuItem onClick={handleAddContact}>
             <PersonAdd fontSize="small" sx={{ marginRight: 1 }} />
             Add contact
           </MenuItem>
@@ -186,6 +193,10 @@ const Navbar = () => {
           </MenuItem>
         </Menu>
       </Box>
+
+      {/* AddContact Modal */}
+      <AddContact open={openAddContact} onClose={() => setOpenAddContact(false)} />
+        
     </FlexBetween>
   );
 };
