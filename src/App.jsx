@@ -1,3 +1,12 @@
+/**
+ * Main Application Component
+ * 
+ * This component sets up the main structure of the React application. It configures routing,
+ * theming, and context providers. It uses Redux for state management and Material-UI for styling.
+ * 
+ * Documentation Generated with ChatGPT
+ */
+
 import React, { useMemo } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { CssBaseline, ThemeProvider } from "@mui/material";
@@ -10,11 +19,17 @@ import { XMPPProvider } from "./context/XMPPContext";
 import Forms from "./pages/Login";
 import Home from "./pages/Home";
 
-// Context
-
+/**
+ * Main App component that sets up routing and theme for the application.
+ *
+ * @returns {JSX.Element} - The main application component.
+ */
 const App = () => {
+  // Get user and mode from Redux store
   const user = useSelector((state) => state.user);
   const mode = useSelector((state) => state.mode);
+
+  // Create a theme object using the mode from Redux store
   const theme = useMemo(() => createTheme(themeSettings(mode)), [mode]);
 
   return (
@@ -22,16 +37,19 @@ const App = () => {
       <ThemeProvider theme={theme}>
         <BrowserRouter>
           <CssBaseline />
+          {/* Provide XMPP context to the component tree */}
           <XMPPProvider>
-          <Routes>
-            <Route path="/" element={<Forms />} />
-            <Route 
-              path="/home" 
-              element={
-                user ? <Home /> : <Navigate to="/" /> 
-              } 
-            />
-          </Routes>
+            <Routes>
+              {/* Route for login page */}
+              <Route path="/" element={<Forms />} />
+              {/* Route for home page, redirect to login if user is not authenticated */}
+              <Route 
+                path="/home" 
+                element={
+                  user ? <Home /> : <Navigate to="/" /> 
+                } 
+              />
+            </Routes>
           </XMPPProvider>
         </BrowserRouter>
       </ThemeProvider>

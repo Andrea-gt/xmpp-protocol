@@ -20,6 +20,7 @@ import { useNavigate } from "react-router-dom";
 import { setLogout } from '../../state';
 import { useDispatch } from 'react-redux';
 import { useXMPP } from '../../context/XMPPContext';
+import { xml } from '@xmpp/client';
 
 // Styled Badge Component
 const StyledBadge = styled(Badge)(({ theme }) => ({
@@ -83,6 +84,31 @@ const Navbar = () => {
     }
   };
 
+  const handleDelete = async () => {
+    if (!xmppClient) {
+      console.error('XMPP client is not connected');
+      return;
+    }
+
+    // Create the deletion request
+    const deletionRequest = xml('iq', { type: 'set', id: 'delete-account' }, [
+      xml('query', { xmlns: 'jabber:iq:register' }, [
+        xml('remove', {}, [])
+      ])
+    ]);
+
+    try {
+      await xmppClient.send(deletionRequest);
+      console.log('Account deletion request sent');
+      await xmppClient.stop().catch(console.error); // Stop the client after the request
+      dispatch(setLogout()); // Optionally, log out the user from the app
+      navigate('/'); // Redirect to home or login page
+    } catch (error) {
+      console.error('Failed to send account deletion request:', error);
+      alert('Failed to delete the account. Please try again.');
+    }
+  };
+
   return (
     <FlexBetween
       display="flex"
@@ -102,7 +128,7 @@ const Navbar = () => {
         <Typography sx={{ fontWeight: '100' }}>
           Hello,{' '}
           <span style={{ color: palette.primary.main, fontWeight: '500' }}>
-            {user || "Guest"}
+            {user || "Guest"}.
           </span>
         </Typography>
         
@@ -150,7 +176,7 @@ const Navbar = () => {
             <Logout fontSize="small" sx={{ marginRight: 1 }} />
             Logout
           </MenuItem>
-          <MenuItem onClick={handleClose}>
+          <MenuItem onClick={handleDelete}>
             <DeleteIcon fontSize="small" sx={{ marginRight: 1 }} />
             Delete account
           </MenuItem>
