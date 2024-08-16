@@ -1,88 +1,66 @@
+/**
+ * ContactList Component
+ * 
+ * This component renders a list of user contacts with their respective statuses.
+ * Each contact is displayed with an avatar and a status indicator.
+ * If there are no contacts available, a message is displayed.
+ * 
+ * Dependencies:
+ * - @mui/material
+ * 
+ * @component
+ * @example
+ * return <ContactList />;
+ * 
+ * @returns {JSX.Element} The ContactList component
+ * 
+ * Documentation Generated with ChatGPT
+ */
+
 import React from 'react';
 import { Box, Typography, useTheme, styled, Badge, Avatar } from "@mui/material";
+import { useSelector } from 'react-redux';
 
-// Define status colors
+/**
+ * Status colors for different user statuses.
+ * 
+ * @type {Object}
+ * @property {string} dnd - Color for 'Do Not Disturb' status.
+ * @property {string} chat - Color for 'Available' status.
+ * @property {string} away - Color for 'Away' status.
+ */
 const statusColors = {
-  dnd: "#D90429",
-  chat: "#44B700",
-  away: "#F6AA1C",
+  dnd: "#D90429",  // Do Not Disturb
+  chat: "#44B700", // Available
+  away: "#F6AA1C", // Away
 };
 
-// Sample user data
-const testUsers = [
-  {
-    name: "Alice Johnson",
-    username: "alice_j",
-    status: "dnd",
-    image: "alice.jpg",
-    jid: "alice@alumchat.lol"
-  },
-  {
-    name: "Bob Smith",
-    username: "bob_s",
-    status: "xa",
-    image: "bob.jpg",
-    jid: "bob@alumchat.lol"
-  },
-  {
-    name: "Charlie Brown",
-    username: "charlie_b",
-    status: "away",
-    image: "charlie.jpg",
-    jid: "charlie@alumchat.lol"
-  },
-  {
-    name: "Diana Prince",
-    username: "diana_p",
-    status: "dnd",
-    image: "diana.jpg",
-    jid: "diana@alumchat.lol"
-  },
-  {
-    name: "Edward Cullen",
-    username: "edward_c",
-    status: "chat",
-    image: "edward.jpg",
-    jid: "edward@alumchat.lol"
-  },
-  {
-    name: "Fiona Apple",
-    username: "fiona_a",
-    status: "away",
-    image: "fiona.jpg",
-    jid: "fiona@alumchat.lol"
-  },
-  {
-    name: "George Bailey",
-    username: "george_b",
-    status: "dnd",
-    image: "george.jpg",
-    jid: "george@alumchat.lol"
-  },
-  {
-    name: "Hannah Montana",
-    username: "hannah_m",
-    status: "chat",
-    image: "hannah.jpg",
-    jid: "hannah@alumchat.lol"
-  },
-  {
-    name: "Ian Malcolm",
-    username: "ian_m",
-    status: "away",
-    image: "ian.jpg",
-    jid: "ian@alumchat.lol"
-  },
-  {
-    name: "Judy Garland",
-    username: "judy_g",
-    status: "dnd",
-    image: "judy.jpg",
-    jid: "judy@alumchat.lol"
-  },
+/**
+ * Sample user data for testing purposes.
+ * 
+ * @type {Array<Object>}
+ * @property {string} name - Full name of the user.
+ * @property {string} username - Username of the user.
+ * @property {string} status - Current status of the user.
+ * @property {string} image - Path to the user's avatar image.
+ * @property {string} jid - Jabber ID of the user.
+ */
+const TEST_USERS = [
 ];
 
-// Styled Badge Component
+/**
+ * Styled Badge component to show user status.
+ * 
+ * @component
+ * @example
+ * <StyledBadge status="chat" overlap="circular" anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }} variant="dot">
+ *   <Avatar src="path/to/avatar.jpg" />
+ * </StyledBadge>
+ * 
+ * @param {Object} props - Component properties
+ * @param {string} props.status - The user's status to determine badge color
+ * @returns {JSX.Element} The StyledBadge component
+ */
 const StyledBadge = styled(Badge)(({ theme, status }) => ({
   '& .MuiBadge-badge': {
     backgroundColor: statusColors[status] || '#A3A3A3',
@@ -101,15 +79,33 @@ const StyledBadge = styled(Badge)(({ theme, status }) => ({
   },
 }));
 
+/**
+ * ContactList Component
+ * 
+ * This component displays a list of contacts with their status indicators.
+ * If no contacts are available, it shows a "No contacts available" message.
+ * 
+ * @component
+ * @example
+ * return <ContactList />;
+ * 
+ * @returns {JSX.Element} The ContactList component
+ */
 const ContactList = () => {
   const { palette } = useTheme();
 
-  // Handle user click
+  /**
+   * Handles click events on a user.
+   * 
+   * @param {Object} user - The user object for the clicked contact
+   */
   const handleUserClick = (user) => {
     console.log(`User clicked: ${user.username}`);
     // Add further logic here
   };
 
+  // Assume that TEST_USERS would be replaced by API data
+  const users = useSelector((state) => state.contacts); 
 
   return (
     <Box
@@ -120,68 +116,74 @@ const ContactList = () => {
       sx={{ height: '100%', overflowY: 'auto' }}
     >
       <Typography variant="h4" sx={{ color: palette.primary.main, fontWeight: '700' }}> Contacts </Typography>
-      <Box
-        display="flex"
-        flexDirection="column"
-        gap="15px"
-        minWidth="100%"
-        sx={{
-          padding: '0.5rem 0.5rem',
-          maxHeight: "65%",
-          width: "100%",
-          overflowY: "auto",
-          '&::-webkit-scrollbar': {
-            width: '8px',
-          },
-          '&::-webkit-scrollbar-track': {
-            backgroundColor: '#F5F5F5',
-          },
-          '&::-webkit-scrollbar-thumb': {
-            backgroundColor: palette.primary.main,
-            borderRadius: '8px',
-          },
-          '&::-webkit-scrollbar-thumb:hover': {
-            backgroundColor: palette.primary.dark,
-          },
-          scrollbarWidth: 'thin', // For Firefox
-          scrollbarColor: `${palette.primary.main} ${'#F5F5F5'}`, // For Firefox
-        }}
-      >
-        {testUsers.map((user) => (
-          <Box
-            key={user.username}
-            display="flex"
-            flexDirection="row"
-            height="75px"
-            alignItems="center"
-            sx={{
-              padding: '1rem 2rem',
-              backgroundColor: "#F5F5F5",
-              boxShadow: `0 2px 4px rgba(0, 0, 0, 0.1)`,
-              cursor: 'pointer'
-            }}
-            onClick={() => handleUserClick(user)}
-          >
-            <StyledBadge
-              status={user.status}
-              overlap="circular"
-              anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-              variant='dot'
-              sx={{ marginRight: '1rem' }}
+      {users.length === 0 ? (
+        <Typography sx={{ textAlign: 'left', color: 'grey', marginTop: '20px' }}>
+          No contacts here yet! Add some friends to start chatting.
+        </Typography>
+      ) : (
+        <Box
+          display="flex"
+          flexDirection="column"
+          gap="15px"
+          minWidth="100%"
+          sx={{
+            padding: '0.5rem 0.5rem',
+            maxHeight: "65%",
+            width: "100%",
+            overflowY: "auto",
+            '&::-webkit-scrollbar': {
+              width: '8px',
+            },
+            '&::-webkit-scrollbar-track': {
+              backgroundColor: '#F5F5F5',
+            },
+            '&::-webkit-scrollbar-thumb': {
+              backgroundColor: palette.primary.main,
+              borderRadius: '8px',
+            },
+            '&::-webkit-scrollbar-thumb:hover': {
+              backgroundColor: palette.primary.dark,
+            },
+            scrollbarWidth: 'thin', // For Firefox
+            scrollbarColor: `${palette.primary.main} ${'#F5F5F5'}`, // For Firefox
+          }}
+        >
+          {users.map((user) => (
+            <Box
+              key={user.username}
+              display="flex"
+              flexDirection="row"
+              height="75px"
+              alignItems="center"
+              sx={{
+                padding: '1rem 2rem',
+                backgroundColor: "#F5F5F5",
+                boxShadow: `0 2px 4px rgba(0, 0, 0, 0.1)`,
+                cursor: 'pointer'
+              }}
+              onClick={() => handleUserClick(user)}
             >
-              <Avatar
-                alt={user.username}
-                src={user.image}
-                sx={{ width: 50, height: 50 }}
-              />
-            </StyledBadge>
-            <Box display="flex" flexDirection="column">
-              <Typography sx={{ color: palette.primary.dark, fontWeight: '500' }}>{user.username}</Typography>
-              <Typography sx={{ color: 'grey' }}>{user.name}, {user.jid}</Typography>
+              <StyledBadge
+                status={user.status}
+                overlap="circular"
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                variant='dot'
+                sx={{ marginRight: '1rem' }}
+              >
+                <Avatar
+                  alt={user.username}
+                  src={user.image}
+                  sx={{ width: 50, height: 50 }}
+                />
+              </StyledBadge>
+              <Box display="flex" flexDirection="column">
+                <Typography sx={{ color: palette.primary.dark, fontWeight: '500' }}>{user.username}</Typography>
+                <Typography sx={{ color: 'grey' }}>{user.name}, {user.jid}</Typography>
+              </Box>
             </Box>
-          </Box>
-        ))}
-      </Box>
+          ))}
+        </Box>
+      )}
     </Box>
   );
 };

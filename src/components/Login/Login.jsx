@@ -25,10 +25,11 @@ import * as yup from "yup";
 import { connectXMPP } from '../../utils/xmppClient';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from "react-router-dom";
-import { setLogin } from '../../state';
+import { setLogin, setContacts } from '../../state';
 import AccountCircleOutlinedIcon from '@mui/icons-material/AccountCircleOutlined';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import { useXMPP } from '../../context/XMPPContext';
+import { xml } from '@xmpp/client';
 
 // Schema for validating login form fields using Yup
 const loginSchema = yup.object().shape({
@@ -51,6 +52,42 @@ const Login = () => {
       const connection = await connectXMPP(username, password);
       updateClient(connection); // Update XMPP client in context
       dispatch(setLogin({ user: username })); // Update Redux store with logged-in user
+
+      // Create an XMPP IQ stanza to request the contact list
+      const rosterRequest = xml('iq', { type: 'get', id: 'roster-request' }, [
+        xml('query', { xmlns: 'jabber:iq:roster' })
+      ]);
+
+      try {
+        // Send the roster request IQ stanza
+        await connection.send(rosterRequest);
+        
+        // Handle incoming roster response
+        connection.on('stanza', (stanza) => {
+          console.log(stanza)
+          if (stanza.is("iq") && stanza.attrs.id === 'roster-request') {
+            const query = stanza.getChild('query');
+            const items = query.getChildren('item');
+      
+            // Transform XML data into JSON format
+            const contacts = items.map(item => {
+              return {
+                jid: item.attrs.jid, // JID of the contact
+                name: item.attrs.name || 'No name', // Contact's name (default to empty string if not present)
+                username: item.attrs.jid.split('@')[0], // Extract username from JID
+                image: '', // Placeholder for image URL (requires additional handling if images are provided)
+                status: item.attrs.show || '' // Contact's status (default to empty string if not present)
+              };
+            });
+            // Process the contacts as needed
+            console.log('Contact List:', contacts);
+            dispatch(setContacts({ contacts }));
+          }
+        });
+      } catch (error) {
+        console.error("Error getting contact list:", error);
+      }
+
       setErrorMessage(''); // Clear any previous error message
       navigate("/home"); // Navigate to the home page upon successful login
     } catch (error) {

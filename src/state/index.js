@@ -14,6 +14,7 @@ const initialState = {
     mode: "light",     // Theme mode (light or dark)
     user: null,        // Currently logged-in user
     token: null,       // Authentication token
+    contacts: [],       // State to hold contacts
     chats: [],         // State to hold chat data
     messages: [],      // State to hold messages
 };
@@ -46,6 +47,14 @@ export const chatSlice = createSlice({
          */
         setLogout: (state) => {
             state.user = null;
+        },
+
+        /**
+         * Set the user contact list. 
+         * @param {Object} state - The current state.
+         */
+        setContacts: (state, action) => {
+            state.contacts = action.payload.contacts;
         },
         
         /**
@@ -99,6 +108,7 @@ export const {
     setMode,
     setLogin,
     setLogout,
+    setContacts,
     addChat,
     removeChat,
     addMessage,

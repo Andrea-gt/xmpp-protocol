@@ -15,6 +15,7 @@ import { Formik, Form, Field } from 'formik';
 import * as yup from 'yup'; // Import Yup for form validation
 import { useXMPP } from '../../context/XMPPContext';
 import { xml } from '@xmpp/client';
+import { setContacts } from '../../state';
 
 const AddContact = ({ open, onClose }) => {
   const { palette } = useTheme(); // Get theme palette from Material-UI
@@ -56,11 +57,45 @@ const AddContact = ({ open, onClose }) => {
     // Create an XMPP presence stanza to request adding a contact
     const presenceRequest = xml('presence', { type: 'subscribe', to: `${values.username}@alumchat.lol` });
 
+
+    // Create an XMPP IQ stanza to request the contact list
+    const rosterRequest = xml('iq', { type: 'get', id: 'roster-request' }, [xml('query', { xmlns: 'jabber:iq:roster' })]);
+
     try {
       // Send the requests using the XMPP client
       await xmppClient.send(addRequest);
       await xmppClient.send(presenceRequest);
       console.log('Contact added successfully'); // Log success message
+
+      try {
+        // Send the roster request IQ stanza
+        await connection.send(rosterRequest);
+        
+        // Handle incoming roster response
+        connection.on('stanza', (stanza) => {
+          console.log(stanza)
+          if (stanza.is("iq") && stanza.attrs.id === 'roster-request') {
+            const query = stanza.getChild('query');
+            const items = query.getChildren('item');
+      
+            // Transform XML data into JSON format
+            const contacts = items.map(item => {
+              return {
+                jid: item.attrs.jid, // JID of the contact
+                name: item.attrs.name || 'No name', // Contact's name (default to "No name" string if not present)
+                username: item.attrs.jid.split('@')[0], // Extract username from JID
+                image: '', // Placeholder for image URL (requires additional handling if images are provided)
+                status: item.getChildText('status') || '' // Contact's status (default to empty string if not present)
+              };
+            });
+            // Process the contacts as needed
+            dispatch(setContacts({ contacts }));
+          }
+        });
+      } catch (error) {
+        console.error("Error getting contact list:", error);
+      }
+
       onClose(); // Close the modal after successful submission
     } catch (error) {
       console.error('Failed to add contact:', error); // Log error if contact addition fails
