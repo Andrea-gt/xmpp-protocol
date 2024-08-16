@@ -52,9 +52,22 @@ export const chatSlice = createSlice({
         /**
          * Set the user contact list. 
          * @param {Object} state - The current state.
+         * @param {Object} action - The action containing the contacts data.
          */
         setContacts: (state, action) => {
             state.contacts = action.payload.contacts;
+        },
+
+        /**
+         * Update a contact's status in the state.
+         * @param {Object} state - The current state.
+         * @param {Object} action - The action containing the contact status update.
+         */
+        updateContactStatus: (state, action) => {
+            const { jid, status } = action.payload;
+            state.contacts = state.contacts.map(contact =>
+                contact.jid === jid ? { ...contact, status: status } : contact
+            );
         },
         
         /**
@@ -109,6 +122,7 @@ export const {
     setLogin,
     setLogout,
     setContacts,
+    updateContactStatus,  // Export the new action
     addChat,
     removeChat,
     addMessage,

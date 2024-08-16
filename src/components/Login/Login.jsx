@@ -25,7 +25,7 @@ import * as yup from "yup";
 import { connectXMPP } from '../../utils/xmppClient';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from "react-router-dom";
-import { setLogin, setContacts } from '../../state';
+import { setLogin, setContacts, updateContactStatus } from '../../state';
 import AccountCircleOutlinedIcon from '@mui/icons-material/AccountCircleOutlined';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import { useXMPP } from '../../context/XMPPContext';
@@ -82,6 +82,19 @@ const Login = () => {
             // Process the contacts as needed
             console.log('Contact List:', contacts);
             dispatch(setContacts({ contacts }));
+          }
+
+          if (stanza.is('presence')) {
+            let fromJid = stanza.attrs.from.split('/')[0]; // Get the JID of the user sending the presence
+            const status = stanza.getChildText('show') || 'chat'; // Extract the status, default to empty string if not present
+            console.log(`Status for ${fromJid}: ${status}`);
+            // Process the status
+            // Dispatch action to update contact status
+            dispatch(updateContactStatus({
+              jid: fromJid,
+              status: status
+            }));
+
           }
         });
       } catch (error) {
