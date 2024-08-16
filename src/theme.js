@@ -29,7 +29,7 @@ export const colorTokens = {
       800: "#485162",
     },
     primary: {
-      200: "#005F8A", // Darker variant of the main color
+      200: "#1D3557", // Darker variant of the main color
       500: "#0077B6", // Updated main color
       800: "#0098E0", // Lighter variant of the main color
     },

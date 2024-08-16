@@ -53,9 +53,13 @@ const AddContact = ({ open, onClose }) => {
       ])
     ]);
 
+    // Create an XMPP presence stanza to request adding a contact
+    const presenceRequest = xml('presence', { type: 'subscribe', to: `${values.username}@alumchat.lol` });
+
     try {
-      // Send the request using the XMPP client
+      // Send the requests using the XMPP client
       await xmppClient.send(addRequest);
+      await xmppClient.send(presenceRequest);
       console.log('Contact added successfully'); // Log success message
       onClose(); // Close the modal after successful submission
     } catch (error) {

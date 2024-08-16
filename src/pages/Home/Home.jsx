@@ -10,6 +10,7 @@ import {
 } from "@mui/material";
 import FlexBetween from '../../FlexBetween';
 import Navbar from '../../components/Navbar/Navbar';
+import ContactList from '../../components/ContactList/ContactList';
 
 const Home = () => {
   const { palette } = useTheme();
@@ -20,24 +21,27 @@ const Home = () => {
       sx={{
         backgroundColor: palette.grey[200],
         height: '100vh',
+        overflow: 'hidden',
       }}
     >
       <Box
         display="flex"
         flexDirection="column"
         sx={{
-          width: "100%"
+          width: "100%",
+          height: '100%',
         }}
       >
-      <Navbar />
-      <Box
-        display="flex"
-        flexDirection="row"
-        gap="50px"
-        sx={{padding: '5rem',}}
-      >
-        Test
-      </Box>
+        <Navbar />
+        <Box
+          display="flex"
+          flexDirection="row"
+          gap="50px"
+          sx={{ padding: '5rem', flexGrow: 1 }}
+        >
+          <ContactList />
+          TEST
+        </Box>
       </Box>
     </FlexBetween>
   );

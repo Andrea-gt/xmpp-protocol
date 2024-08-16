@@ -23,11 +23,18 @@ import { useXMPP } from '../../context/XMPPContext';
 import { xml } from '@xmpp/client';
 import AddContact from '../AddContact/AddContact';
 
+// Define status colors
+const statusColors = {
+  offline: "#D90429",
+  connected: "#44B700",
+  busy: "#F6AA1C",
+};
+
 // Styled Badge Component
-const StyledBadge = styled(Badge)(({ theme }) => ({
+const StyledBadge = styled(Badge)(({ theme, status }) => ({
   '& .MuiBadge-badge': {
-    backgroundColor: '#44b700',
-    color: '#44b700',
+    backgroundColor: status,
+    color: status,
     boxShadow: `0 0 0 2px ${theme.palette.background.paper}`,
     '&::after': {
       position: 'absolute',
@@ -36,19 +43,8 @@ const StyledBadge = styled(Badge)(({ theme }) => ({
       width: '100%',
       height: '100%',
       borderRadius: '50%',
-      animation: 'ripple 1.2s infinite ease-in-out',
       border: '1px solid currentColor',
       content: '""',
-    },
-  },
-  '@keyframes ripple': {
-    '0%': {
-      transform: 'scale(.8)',
-      opacity: 1,
-    },
-    '100%': {
-      transform: 'scale(2.4)',
-      opacity: 0,
     },
   },
 }));
@@ -62,6 +58,10 @@ const Navbar = () => {
   const open = Boolean(anchorEl);
   const navigate = useNavigate();
   const { xmppClient } = useXMPP(); 
+
+  // Determine status
+  const userStatus = xmppClient ? 'connected' : 'offline'; // Update this logic as needed
+  const badgeColor = statusColors[userStatus];
 
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -104,7 +104,7 @@ const Navbar = () => {
       console.log('Account deletion request sent');
 
       // Optionally wait a bit to ensure the request is processed
-      await new Promise(resolve => setTimeout(resolve, 1000)); // 2-second delay
+      await new Promise(resolve => setTimeout(resolve, 1000)); // 1-second delay
 
       await xmppClient.stop(); // Stop the client after the request
       dispatch(setLogout()); // Optionally, log out the user from the app
@@ -156,6 +156,7 @@ const Navbar = () => {
               overlap="circular"
               anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
               variant="dot"
+              status={badgeColor} // Pass the status color here
             >
               <Avatar alt="User Avatar" src="/static/images/avatar/1.jpg" />
             </StyledBadge>
@@ -196,7 +197,7 @@ const Navbar = () => {
 
       {/* AddContact Modal */}
       <AddContact open={openAddContact} onClose={() => setOpenAddContact(false)} />
-        
+
     </FlexBetween>
   );
 };
