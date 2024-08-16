@@ -64,11 +64,19 @@ export const chatSlice = createSlice({
          * @param {Object} action - The action containing the contact status update.
          */
         updateContactStatus: (state, action) => {
-            const { jid, status } = action.payload;
-            state.contacts = state.contacts.map(contact =>
-                contact.jid === jid ? { ...contact, status: status } : contact
-            );
-        },
+            const { jid, status, image } = action.payload;
+        
+            state.contacts = state.contacts.map(contact => {
+                if (contact.jid === jid) {
+                    return {
+                        ...contact,
+                        status: status !== undefined ? status : contact.status, // Update status only if provided
+                        image: image !== undefined ? image : contact.image    // Update image only if provided
+                    };
+                }
+                return contact;
+            });
+        },        
         
         /**
          * Add a new chat to the state.

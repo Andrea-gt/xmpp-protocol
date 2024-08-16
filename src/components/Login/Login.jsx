@@ -96,6 +96,27 @@ const Login = () => {
             }));
 
           }
+
+          // Handle message stanzas (for images)
+          if (stanza.is('message') && stanza.getChild('event')) {
+            const fromJid = stanza.attrs.from.split('/')[0]; // Get the JID of the sender
+            const dataChild = stanza.getChild('event').getChild('items').getChild('item').getChild('data');
+
+            if (dataChild) {
+              const base64Image = dataChild.text();
+              const imageURL = `data:image/jpeg;base64,${base64Image}`;
+              console.log(`Image URL for ${fromJid}: ${imageURL}`);
+              // Dispatch action to update contact status
+              dispatch(updateContactStatus({
+                jid: fromJid,
+                image: imageURL
+              }));
+
+            } else {
+              console.log(`No image data found for ${fromJid}`);
+            }
+          }
+
         });
       } catch (error) {
         console.error("Error getting contact list:", error);

@@ -45,8 +45,6 @@ const statusColors = {
  * @property {string} image - Path to the user's avatar image.
  * @property {string} jid - Jabber ID of the user.
  */
-const TEST_USERS = [
-];
 
 /**
  * Styled Badge component to show user status.
@@ -99,8 +97,9 @@ const ContactList = () => {
    * 
    * @param {Object} user - The user object for the clicked contact
    */
-  const handleUserClick = (user) => {
+  const handleUserClick = (user, users) => {
     console.log(`User clicked: ${user.username}`);
+    console.log(users)
     // Add further logic here
   };
 
@@ -161,7 +160,7 @@ const ContactList = () => {
                 boxShadow: `0 2px 4px rgba(0, 0, 0, 0.1)`,
                 cursor: 'pointer'
               }}
-              onClick={() => handleUserClick(user)}
+              onClick={() => handleUserClick(user, users)}
             >
               <StyledBadge
                 status={user.status}
