@@ -38,6 +38,7 @@ const Home = () => {
           display="flex"
           flexDirection="row"
           gap="50px"
+          height="100%"
           sx={{ padding: '5rem', flexGrow: 1 }}
         >
           <ContactList />
