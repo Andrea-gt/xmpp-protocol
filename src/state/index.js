@@ -17,6 +17,8 @@ const initialState = {
     contacts: [],       // State to hold contacts
     chats: [],         // State to hold chat data
     messages: [],      // State to hold messages
+    images: [],         // State to hold user images
+    statusList: []     // State to hold user status
 };
 
 // Create the chat slice with actions and reducers
@@ -65,7 +67,6 @@ export const chatSlice = createSlice({
          */
         updateContactStatus: (state, action) => {
             const { jid, status, image } = action.payload;
-        
             state.contacts = state.contacts.map(contact => {
                 if (contact.jid === jid) {
                     return {
@@ -76,7 +77,7 @@ export const chatSlice = createSlice({
                 }
                 return contact;
             });
-        },        
+        },       
         
         /**
          * Add a new chat to the state.
@@ -121,6 +122,43 @@ export const chatSlice = createSlice({
         clearMessages: (state) => {
             state.messages = [];
         },
+
+        /**
+         * Add or update an image in the images state.
+         * @param {Object} state - The current state.
+         * @param {Object} action - The action containing the image data.
+         */
+
+        addOrUpdateImage: (state, action) => {
+            const { jid, image } = action.payload;
+            const imageIndex = state.images.findIndex(img => img.jid === jid);
+
+            if (imageIndex !== -1) {
+                // Update existing image
+                state.images[imageIndex] = { jid, image };
+            } else {
+                // Add new image
+                state.images.push({ jid, image });
+            }
+        },
+
+        /**
+         * Add or update a status in the statusList state.
+         * @param {Object} state - The current state.
+         * @param {Object} action - The action containing the image data.
+         */
+
+        addOrUpdateStatus: (state, action) => {
+            const { jid, status } = action.payload;
+            const statusIndex = state.statusList.findIndex(status => status.jid === jid);
+            if (statusIndex !== -1) {
+                // Update existing status
+                state.statusList[statusIndex] = { jid, status };
+            } else {
+                // Add new status
+                state.statusList.push({ jid, status });
+            }
+        },
     },
 });
 
@@ -136,6 +174,8 @@ export const {
     addMessage,
     setMessages,
     clearMessages,
+    addOrUpdateImage,
+    addOrUpdateStatus
 } = chatSlice.actions;
 
 // Export the reducer to be used in the store

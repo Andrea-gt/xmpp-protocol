@@ -23,9 +23,15 @@ import FlexBetween from '../../FlexBetween';
 import { Formik, Form, Field } from "formik";
 import * as yup from "yup";
 import { connectXMPP } from '../../utils/xmppClient';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from "react-router-dom";
-import { setLogin, setContacts, updateContactStatus } from '../../state';
+import { 
+  setLogin, 
+  setContacts, 
+  updateContactStatus, 
+  addOrUpdateImage,
+  addOrUpdateStatus
+ } from '../../state';
 import AccountCircleOutlinedIcon from '@mui/icons-material/AccountCircleOutlined';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import { useXMPP } from '../../context/XMPPContext';
@@ -43,6 +49,20 @@ const Login = () => {
   const [errorMessage, setErrorMessage] = React.useState(''); // State for managing error messages
   const navigate = useNavigate(); // Hook for navigation
   const { updateClient } = useXMPP(); // Custom hook for XMPP context
+  const images = useSelector((state) => state.images);
+  const status_list = useSelector((state) => state.statusList);
+
+  const getImageByJid = (jid) => {
+    const image = images.find(img => img.jid === jid);
+    console.log(image, jid)
+    return image ? image.image : ''; // Return image URL or empty string if not found
+  };
+
+  const getStatusByJid = (jid) => {
+    const status = status_list.find(status => status.jid === jid);
+    console.log(status, jid)
+    return status ? status.status : ''; // Return status or empty string if not found
+  };
 
   // Handle form submission
   const handleSubmit = async (values) => {
@@ -75,8 +95,8 @@ const Login = () => {
                 jid: item.attrs.jid, // JID of the contact
                 name: item.attrs.name || 'No name', // Contact's name (default to empty string if not present)
                 username: item.attrs.jid.split('@')[0], // Extract username from JID
-                image: '', // Placeholder for image URL (requires additional handling if images are provided)
-                status: item.attrs.show || '' // Contact's status (default to empty string if not present)
+                image: getImageByJid(item.attrs.jid), // Placeholder for image URL (requires additional handling if images are provided)
+                status: getStatusByJid(item.attrs.jid) // Contact's status (default to empty string if not present)
               };
             });
             // Process the contacts as needed
@@ -85,16 +105,28 @@ const Login = () => {
           }
 
           if (stanza.is('presence')) {
+            let status = ''
             let fromJid = stanza.attrs.from.split('/')[0]; // Get the JID of the user sending the presence
-            const status = stanza.getChildText('show') || 'chat'; // Extract the status, default to empty string if not present
-            console.log(`Status for ${fromJid}: ${status}`);
+
+            if (stanza.attrs && stanza.attrs.type === "unavailable") {
+              status = "unavailable";
+            } else {
+              status = stanza.getChildText('show') || 'chat'; // Extract the status, default to 'chat' if not present
+            }
+
+            console.log(`Status for ${fromJid}: ${status} --> ${stanza.attrs.type}`);            
             // Process the status
+            // Dispatch action to update contact image (initial call)
+            dispatch(addOrUpdateStatus({
+                jid: fromJid,
+                status: status
+            }));
+
             // Dispatch action to update contact status
             dispatch(updateContactStatus({
               jid: fromJid,
               status: status
             }));
-
           }
 
           // Handle message stanzas (for images)
@@ -106,6 +138,12 @@ const Login = () => {
               const base64Image = dataChild.text();
               const imageURL = `data:image/jpeg;base64,${base64Image}`;
               console.log(`Image URL for ${fromJid}: ${imageURL}`);
+              
+              // Dispatch action to update contact image (initial call)
+              dispatch(addOrUpdateImage({
+                jid: fromJid,
+                image: imageURL
+              }));
               // Dispatch action to update contact status
               dispatch(updateContactStatus({
                 jid: fromJid,
