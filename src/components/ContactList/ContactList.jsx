@@ -33,7 +33,7 @@ const statusColors = {
   dnd: "#D90429",  // Do Not Disturb
   chat: "#44B700", // Available
   away: "#F6AA1C", // Away
-  unavailable: "#0077B6" // Unavailable
+  xa: "#0077B6" // Exteded away
 };
 
 /**

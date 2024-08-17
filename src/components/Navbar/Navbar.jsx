@@ -58,11 +58,19 @@ const Navbar = () => {
   const open = Boolean(anchorEl);
   const navigate = useNavigate();
   const { xmppClient } = useXMPP(); 
+  const images = useSelector((state) => state.images);
 
   // Determine status
   const userStatus = xmppClient ? 'connected' : 'offline'; // Update this logic as needed
   const badgeColor = statusColors[userStatus];
 
+  const getImageByJid = (jid) => {
+    const image = images.find(img => img.jid === jid);
+    console.log(image, jid)
+    return image ? image.image : '';
+  };
+
+  
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
   };
@@ -158,7 +166,7 @@ const Navbar = () => {
               variant="dot"
               status={badgeColor} // Pass the status color here
             >
-              <Avatar alt="User Avatar" src="/static/images/avatar/1.jpg" />
+              <Avatar alt="User Avatar" src={getImageByJid(`${user}@alumchat.lol`)} />
             </StyledBadge>
           </IconButton>
         </Tooltip>

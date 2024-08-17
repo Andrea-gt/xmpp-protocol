@@ -11,6 +11,7 @@ import {
 import FlexBetween from '../../FlexBetween';
 import Navbar from '../../components/Navbar/Navbar';
 import ContactList from '../../components/ContactList/ContactList';
+import Chat from '../../components/Chat/Chat';
 
 const Home = () => {
   const { palette } = useTheme();
@@ -40,7 +41,7 @@ const Home = () => {
           sx={{ padding: '5rem', flexGrow: 1 }}
         >
           <ContactList />
-          TEST
+          <Chat />
         </Box>
       </Box>
     </FlexBetween>

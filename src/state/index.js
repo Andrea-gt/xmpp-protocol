@@ -13,6 +13,7 @@ import { createSlice } from "@reduxjs/toolkit";
 const initialState = {
     mode: "light",     // Theme mode (light or dark)
     user: null,        // Currently logged-in user
+    picture: null,      // State to hold user profile picture
     token: null,       // Authentication token
     contacts: [],       // State to hold contacts
     chats: [],         // State to hold chat data
