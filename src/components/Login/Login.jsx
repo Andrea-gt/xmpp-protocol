@@ -30,7 +30,8 @@ import {
   setContacts, 
   updateContactStatus, 
   addOrUpdateImage,
-  addOrUpdateStatus
+  addOrUpdateStatus,
+  setMessages
  } from '../../state';
 import AccountCircleOutlinedIcon from '@mui/icons-material/AccountCircleOutlined';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
@@ -51,16 +52,15 @@ const Login = () => {
   const { updateClient } = useXMPP(); // Custom hook for XMPP context
   const images = useSelector((state) => state.images);
   const status_list = useSelector((state) => state.statusList);
+  const messages = useSelector((state) => state.messages);
 
   const getImageByJid = (jid) => {
     const image = images.find(img => img.jid === jid);
-    console.log(image, jid)
     return image ? image.image : ''; // Return image URL or empty string if not found
   };
 
   const getStatusByJid = (jid) => {
     const status = status_list.find(status => status.jid === jid);
-    console.log(status, jid)
     return status ? status.status : ''; // Return status or empty string if not found
   };
 
@@ -78,13 +78,20 @@ const Login = () => {
         xml('query', { xmlns: 'jabber:iq:roster' })
       ]);
 
+      // Create an XMPP IQ stanza to request the chat list
+      const chatRequest = xml('iq', { type: 'set', id: 'chat-request' }, [
+        xml('query', { xmlns: 'urn:xmpp:mam:2', queryid: 'f27' })
+      ]);
+
       try {
         // Send the roster request IQ stanza
         await connection.send(rosterRequest);
+
+        // Send the chat request IQ stanza
+        await connection.send(chatRequest);
         
         // Handle incoming roster response
         connection.on('stanza', (stanza) => {
-          console.log(stanza)
           if (stanza.is("iq") && stanza.attrs.id === 'roster-request') {
             const query = stanza.getChild('query');
             const items = query.getChildren('item');
@@ -99,9 +106,19 @@ const Login = () => {
                 status: getStatusByJid(item.attrs.jid) // Contact's status (default to empty string if not present)
               };
             });
-            // Process the contacts as needed
-            console.log('Contact List:', contacts);
             dispatch(setContacts({ contacts }));
+          }
+
+          if (stanza.is("message") && stanza.attrs.id === 'chat-request' && stanza.getChild('result')) {
+            console.log('TEST')
+            let message = {
+              to: stanza.getChild('result').getChild('forwarded').getChild('message').getAttr('to'),
+              from: stanza.getChild('result').getChild('forwarded').getChild('message').getAttr('from').split('/')[0],
+              timestamp: stanza.getChild('result').getChild('forwarded').getChild('delay').getAttr('stamp'),
+              content: stanza.getChild('result').getChild('forwarded').getChild('message').getChild('body').getText()
+            };
+            console.log('Message recieved:', message);
+            dispatch(setMessages([ ...messages, message ]));
           }
 
           if (stanza.is('presence')) {
@@ -112,9 +129,7 @@ const Login = () => {
               status = "unavailable";
             } else {
               status = stanza.getChildText('show') || 'chat'; // Extract the status, default to 'chat' if not present
-            }
-
-            console.log(`Status for ${fromJid}: ${status} --> ${stanza.attrs.type}`);            
+            }     
             // Process the status
             // Dispatch action to update contact image (initial call)
             dispatch(addOrUpdateStatus({
@@ -137,8 +152,6 @@ const Login = () => {
             if (dataChild) {
               const base64Image = dataChild.text();
               const imageURL = `data:image/jpeg;base64,${base64Image}`;
-              console.log(`Image URL for ${fromJid}: ${imageURL}`);
-              
               // Dispatch action to update contact image (initial call)
               dispatch(addOrUpdateImage({
                 jid: fromJid,

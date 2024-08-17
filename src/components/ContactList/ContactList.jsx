@@ -20,6 +20,8 @@
 import React from 'react';
 import { Box, Typography, useTheme, styled, Badge, Avatar } from "@mui/material";
 import { useSelector } from 'react-redux';
+import { setChat } from '../../state';
+import { useDispatch } from 'react-redux';
 
 /**
  * Status colors for different user statuses.
@@ -92,6 +94,7 @@ const StyledBadge = styled(Badge)(({ theme, status }) => ({
  */
 const ContactList = () => {
   const { palette } = useTheme();
+  const dispatch = useDispatch(); // Get dispatch function from Redux
 
   /**
    * Handles click events on a user.
@@ -99,9 +102,7 @@ const ContactList = () => {
    * @param {Object} user - The user object for the clicked contact
    */
   const handleUserClick = (user, users) => {
-    console.log(`User clicked: ${user.username}`);
-    console.log(users)
-    // Add further logic here
+    dispatch(setChat({ chat_jid: `${user.username}@alumchat.lol` }));
   };
 
   // Assume that TEST_USERS would be replaced by API data

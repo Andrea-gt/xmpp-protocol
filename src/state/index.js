@@ -16,7 +16,7 @@ const initialState = {
     picture: null,      // State to hold user profile picture
     token: null,       // Authentication token
     contacts: [],       // State to hold contacts
-    chats: [],         // State to hold chat data
+    chat_jid: null,         // State to hold chat data
     messages: [],      // State to hold messages
     images: [],         // State to hold user images
     statusList: []     // State to hold user status
@@ -79,32 +79,14 @@ export const chatSlice = createSlice({
                 return contact;
             });
         },       
-        
+
         /**
-         * Add a new chat to the state.
+         * Set the chats state with a new array of messages.
          * @param {Object} state - The current state.
-         * @param {Object} action - The action containing the new chat data.
+         * @param {Object} action - The action containing the new chats array.
          */
-        addChat: (state, action) => {
-            state.chats.push(action.payload.chat);
-        },
-        
-        /**
-         * Remove a chat from the state based on its ID.
-         * @param {Object} state - The current state.
-         * @param {Object} action - The action containing the chat ID to be removed.
-         */
-        removeChat: (state, action) => {
-            state.chats = state.chats.filter(chat => chat.id !== action.payload.id);
-        },
-        
-        /**
-         * Add a new message to the messages state.
-         * @param {Object} state - The current state.
-         * @param {Object} action - The action containing the new message data.
-         */
-        addMessage: (state, action) => {
-            state.messages.push(action.payload.message);
+        setChat: (state, action) => {
+            state.chat_jid = action.payload.chat_jid;
         },
         
         /**
@@ -114,14 +96,6 @@ export const chatSlice = createSlice({
          */
         setMessages: (state, action) => {
             state.messages = action.payload.messages;
-        },
-        
-        /**
-         * Clear all messages from the state.
-         * @param {Object} state - The current state.
-         */
-        clearMessages: (state) => {
-            state.messages = [];
         },
 
         /**
@@ -169,12 +143,9 @@ export const {
     setLogin,
     setLogout,
     setContacts,
-    updateContactStatus,  // Export the new action
-    addChat,
-    removeChat,
-    addMessage,
+    updateContactStatus,
+    setChat,
     setMessages,
-    clearMessages,
     addOrUpdateImage,
     addOrUpdateStatus
 } = chatSlice.actions;
