@@ -21,7 +21,8 @@ import {
   Tooltip,
   IconButton,
   TextField,
-  Button
+  Button,
+  Avatar
 } from "@mui/material";
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import SendIcon from '@mui/icons-material/Send';
@@ -42,6 +43,10 @@ import { xml } from '@xmpp/client';
  */
 const ChatBubble = ({ from = 'Unknown', message = '', timestamp = Date.now(), isCurrentUser = false }) => {
   const { palette } = useTheme();
+  const images = useSelector((state) => state.images); 
+
+  // Find the image for the current sender
+  const userImage = images.find(img => img.jid === `${from}alumchat.lol`) || null;
 
   return (
     <Box

@@ -99,7 +99,7 @@ const Login = () => {
             const items = query.getChildren('item');
 
             // Optionally wait a bit to ensure the request is processed
-            new Promise(resolve => setTimeout(resolve, 2000)); // 1-second delay
+            new Promise(resolve => setTimeout(resolve, 4000)); // 1-second delay
             // Transform XML data into JSON format
             const contacts = items.map(item => ({
               jid: item.attrs.jid, // JID of the contact
