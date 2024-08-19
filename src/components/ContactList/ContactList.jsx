@@ -17,7 +17,7 @@
  * Documentation Generated with ChatGPT
  */
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Box, Typography, useTheme, styled, Badge, Avatar } from "@mui/material";
 import { useSelector } from 'react-redux';
 import { setChat } from '../../state';
@@ -95,6 +95,7 @@ const StyledBadge = styled(Badge)(({ theme, status }) => ({
 const ContactList = () => {
   const { palette } = useTheme();
   const dispatch = useDispatch(); // Get dispatch function from Redux
+  const users = useSelector((state) => state.contacts); 
 
   /**
    * Handles click events on a user.
@@ -104,9 +105,6 @@ const ContactList = () => {
   const handleUserClick = (user, users) => {
     dispatch(setChat({ chat_jid: `${user.username}@alumchat.lol` }));
   };
-
-  // Assume that TEST_USERS would be replaced by API data
-  const users = useSelector((state) => state.contacts); 
 
   return (
     <Box
