@@ -9,7 +9,7 @@
  * Documentation Generated with ChatGPT
  */
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   Box,
   Typography,
@@ -55,12 +55,17 @@ const Login = () => {
   const messages = useSelector((state) => state.messages);
 
   const getImageByJid = (jid) => {
+    console.log('Looking for image with JID:', jid);
     const image = images.find(img => img.jid === jid);
+    console.log('Found image:', image);
     return image ? image.image : ''; // Return image URL or empty string if not found
   };
-
+  
   const getStatusByJid = (jid) => {
+    console.log('Looking for status with JID:', jid);
+    console.log(status_list)
     const status = status_list.find(status => status.jid === jid);
+    console.log('Found status:', status);
     return status ? status.status : ''; // Return status or empty string if not found
   };
 
@@ -84,97 +89,94 @@ const Login = () => {
       try {
         // Send the roster request IQ stanza
         await connection.send(rosterRequest);
-
         // Send the chat request IQ stanza
         await connection.send(chatRequest);
-        
         // Handle incoming roster response
         connection.on('stanza', (stanza) => {
           console.log(stanza)
           if (stanza.is("iq") && stanza.attrs.id === 'roster-request') {
             const query = stanza.getChild('query');
             const items = query.getChildren('item');
-      
+
+            // Optionally wait a bit to ensure the request is processed
+            new Promise(resolve => setTimeout(resolve, 2000)); // 1-second delay
             // Transform XML data into JSON format
-            const contacts = items.map(item => {
-              return {
-                jid: item.attrs.jid, // JID of the contact
-                name: item.attrs.name || 'No name', // Contact's name (default to empty string if not present)
-                username: item.attrs.jid.split('@')[0], // Extract username from JID
-                image: getImageByJid(item.attrs.jid), // Placeholder for image URL (requires additional handling if images are provided)
-                status: getStatusByJid(item.attrs.jid) // Contact's status (default to empty string if not present)
-              };
-            });
+            const contacts = items.map(item => ({
+              jid: item.attrs.jid, // JID of the contact
+              name: item.attrs.name || 'No name', // Contact's name (default to 'No name' if not present)
+              username: item.attrs.jid.split('@')[0], // Extract username from JID
+              image: getImageByJid(item.attrs.jid), // Placeholder for image URL (requires additional handling if images are provided)
+              status: getStatusByJid(item.attrs.jid) // Contact's status (default to empty string if not present)
+            }));
             dispatch(setContacts({ contacts }));
           }
 
-          if (stanza.is("message") && stanza.getChild('result')) {
-            let message = {
-              to: stanza.getChild('result').getChild('forwarded').getChild('message').getAttr('to'),
-              from: stanza.getChild('result').getChild('forwarded').getChild('message').getAttr('from').split('/')[0],
-              timestamp: stanza.getChild('result').getChild('forwarded').getChild('delay').getAttr('stamp'),
-              content: stanza.getChild('result').getChild('forwarded').getChild('message').getChild('body').getText()
-            };
-            console.log(messages)
-            dispatch(setMessages({ messages: [ ...messages, message ] }));
-            console.log("MESSAGE", message)
-          }
-
           if (stanza.is('presence')) {
-            let status = ''
+            let status = '';
             let fromJid = stanza.attrs.from.split('/')[0]; // Get the JID of the user sending the presence
-
             if (stanza.attrs && stanza.attrs.type === "unavailable") {
               status = "unavailable";
             } else {
               status = stanza.getChildText('show') || 'chat'; // Extract the status, default to 'chat' if not present
-            }     
-            // Process the status
-            console.log(status, fromJid)
-            // Dispatch action to update contact image (initial call)
-            dispatch(addOrUpdateStatus({
-                jid: fromJid,
-                status: status
-            }));
-
-            // Dispatch action to update contact status
-            dispatch(updateContactStatus({
-              jid: fromJid,
-              status: status
-            }));
+            }
+            console.log("Dispatching action with payload:", { jid: fromJid, status: status });
+            console.log("Stanza values:", {
+              from: stanza.attrs.from,
+              type: stanza.attrs.type,
+              statusText: stanza.getChildText('show')
+            });
+            // Dispatch actions to update contact image and status
+            dispatch(addOrUpdateStatus({ jid: fromJid, status: status }));
+            dispatch(updateContactStatus({ jid: fromJid, status: status }));
           }
 
-          // Handle message stanzas (for images)
-          if (stanza.is('message') && stanza.getChild('event')) {
-            const fromJid = stanza.attrs.from.split('/')[0]; // Get the JID of the sender
-            const dataChild = stanza.getChild('event').getChild('items').getChild('item').getChild('data');
+          if (stanza.is("message")) {
+            let message;
+            if (stanza.getChild('result')) {
+              // Case when 'result' is present
+              const result = stanza.getChild('result');
+              const forwardedMessage = result.getChild('forwarded').getChild('message');
+              const delay = result.getChild('forwarded').getChild('delay');
+              message = {
+                to: forwardedMessage.getAttr('to'),
+                from: forwardedMessage.getAttr('from').split('/')[0],
+                timestamp: delay.getAttr('stamp'),
+                content: forwardedMessage.getChild('body').getText()
+              };
+              console.log(message)
+            } else if (stanza.getChild('body')) {
+              // Case when only 'body' is present
+              const body = stanza.getChild('body');
+              message = {
+                to: stanza.attrs.to,  // No 'to' attribute available
+                from: stanza.attrs.from.split('/')[0], // No 'from' attribute available
+                timestamp: new Date().toISOString(), // No timestamp available
+                content: body.getText()
+              };
+            } else if (stanza.getChild('event')) {
+              // Case when only 'event' is present
+              const fromJid = stanza.attrs.from.split('/')[0]; // Get the JID of the sender
+              const dataChild = stanza.getChild('event').getChild('items').getChild('item').getChild('data');
 
-            if (dataChild) {
-              const base64Image = dataChild.text();
-              const imageURL = `data:image/jpeg;base64,${base64Image}`;
-              // Dispatch action to update contact image (initial call)
-              dispatch(addOrUpdateImage({
-                jid: fromJid,
-                image: imageURL
-              }));
-              // Dispatch action to update contact status
-              dispatch(updateContactStatus({
-                jid: fromJid,
-                image: imageURL
-              }));
-
-            } else {
-              console.log(`No image data found for ${fromJid}`);
+              if (dataChild) {
+                const base64Image = dataChild.text();
+                const imageURL = `data:image/jpeg;base64,${base64Image}`;
+                // Dispatch action to update contact image (initial call)
+                dispatch(addOrUpdateImage({ jid: fromJid, image: imageURL }));
+                // Dispatch action to update contact status
+                dispatch(updateContactStatus({ jid: fromJid, image: imageURL }));
+              }
+            } if (message) {
+              dispatch(setMessages({ messages: [...messages, message] }));
             }
           }
-
         });
+
+        setErrorMessage(''); // Clear any previous error message
+        navigate("/home"); // Navigate to the home page upon successful login
       } catch (error) {
         console.error("Error getting contact list:", error);
       }
-
-      setErrorMessage(''); // Clear any previous error message
-      navigate("/home"); // Navigate to the home page upon successful login
     } catch (error) {
       console.error("Login failed:", error);
       setErrorMessage("Login failed. Please check your username and password."); // Set the error message
@@ -213,73 +215,73 @@ const Login = () => {
             To continue, please enter your username and password. Your chats are just a login away.
           </Typography>
         </Box>
-
-        {/* Display error message if any */}
-        {errorMessage && <Alert severity="error">{errorMessage}</Alert>}
-
-        <Box sx={{ width: "60%" }}>
+        <Box sx={{ padding: '16px', borderRadius: '8px' }}>
           <Formik
             initialValues={{ username: '', password: '' }} // Initial form values
-            validationSchema={loginSchema} // Validation schema for the form
+            validationSchema={loginSchema} // Form validation schema
             onSubmit={handleSubmit} // Handle form submission
           >
-            {({ handleSubmit, isValid, dirty }) => (
-              <Form onSubmit={handleSubmit}>
-                <Box display="flex" flexDirection="column" gap="20px">
-                  <Field name="username">
-                    {({ field, meta }) => (
-                      <TextField
-                        {...field}
-                        label="Username"
-                        variant="outlined"
-                        fullWidth
-                        margin="normal"
-                        error={meta.touched && Boolean(meta.error)} // Show error state if touched and has error
-                        helperText={meta.touched && meta.error} // Display error message
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <AccountCircleOutlinedIcon fontSize="small" /> {/* Icon for username field */}
-                            </InputAdornment>
-                          ),
-                        }}
-                      />
-                    )}
-                  </Field>
-
-                  <Field name="password">
-                    {({ field, meta }) => (
-                      <TextField
-                        {...field}
-                        label="Password"
-                        type="password"
-                        variant="outlined"
-                        fullWidth
-                        margin="normal"
-                        error={meta.touched && Boolean(meta.error)} // Show error state if touched and has error
-                        helperText={meta.touched && meta.error} // Display error message
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <LockOutlinedIcon fontSize="small" /> {/* Icon for password field */}
-                            </InputAdornment>
-                          ),
-                        }}
-                      />
-                    )}
-                  </Field>
-
-                  <Button 
-                    type="submit"
-                    variant="contained"
-                    color="primary"
-                    fullWidth
-                    sx={{ marginTop: '16px' }}
-                    disabled={!isValid || !dirty} // Disable button if form is invalid or untouched
-                  >
-                    Login
-                  </Button>
-                </Box>
+            {({ errors, touched }) => (
+              <Form>
+                <Field name="username">
+                  {({ field }) => (
+                    <TextField
+                      {...field}
+                      label="Username"
+                      variant="outlined"
+                      fullWidth
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <AccountCircleOutlinedIcon />
+                          </InputAdornment>
+                        ),
+                      }}
+                      error={Boolean(touched.username && errors.username)} // Show error if touched and invalid
+                      helperText={touched.username && errors.username} // Show validation error message
+                      sx={{ marginBottom: '16px' }} // Margin bottom for spacing
+                    />
+                  )}
+                </Field>
+                <Field name="password">
+                  {({ field }) => (
+                    <TextField
+                      {...field}
+                      label="Password"
+                      variant="outlined"
+                      type="password"
+                      fullWidth
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <LockOutlinedIcon />
+                          </InputAdornment>
+                        ),
+                      }}
+                      error={Boolean(touched.password && errors.password)} // Show error if touched and invalid
+                      helperText={touched.password && errors.password} // Show validation error message
+                      sx={{ marginBottom: '16px' }} // Margin bottom for spacing
+                    />
+                  )}
+                </Field>
+                {errorMessage && (
+                  <Alert severity="error" sx={{ marginBottom: '16px' }}>
+                    {errorMessage} {/* Display error message */}
+                  </Alert>
+                )}
+                <Button
+                  type="submit"
+                  variant="contained"
+                  fullWidth
+                  sx={{
+                    backgroundColor: palette.primary.main,
+                    '&:hover': {
+                      backgroundColor: palette.primary.dark,
+                    },
+                  }}
+                >
+                  Login
+                </Button>
               </Form>
             )}
           </Formik>

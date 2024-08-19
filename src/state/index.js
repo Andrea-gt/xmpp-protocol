@@ -19,7 +19,7 @@ const initialState = {
     chat_jid: null,         // State to hold chat data
     messages: [],      // State to hold messages
     images: [],         // State to hold user images
-    statusList: []     // State to hold user status
+    statusList: []
 };
 
 // Create the chat slice with actions and reducers
@@ -78,6 +78,7 @@ export const chatSlice = createSlice({
                 }
                 return contact;
             });
+            console.log(state.contacts)
         },       
 
         /**
@@ -129,18 +130,33 @@ export const chatSlice = createSlice({
          * @param {Object} state - The current state.
          * @param {Object} action - The action containing the image data.
          */
-
         addOrUpdateStatus: (state, action) => {
+            console.log("Reducer received action:", action);
             const { jid, status } = action.payload;
-            const statusIndex = state.statusList.findIndex(status => status.jid === jid);
+            if (!jid || status === undefined) {
+                console.error('Invalid payload for addOrUpdateStatus:', action.payload);
+                return;
+            }
+        
+            // Ensure state.statusList is an array
+            if (!Array.isArray(state.statusList)) {
+                console.error('Expected statusList to be an array, but got:', state.statusList);
+                return;
+            }
+        
+            const statusIndex = state.statusList.findIndex(s => s.jid === jid);
             if (statusIndex !== -1) {
                 // Update existing status
+                console.log(`Updating existing status for JID ${jid} to ${status}`);
                 state.statusList[statusIndex] = { jid, status };
             } else {
                 // Add new status
+                console.log(`Adding new status for JID ${jid}: ${status}`);
                 state.statusList.push({ jid, status });
             }
-        },
+        
+            console.log("Updated statusList:", state.statusList);
+        }
     },
 });
 

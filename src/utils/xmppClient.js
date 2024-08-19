@@ -31,7 +31,7 @@ export const connectXMPP = async (username, password) => {
   xmppClient.on('online', async (address) => {
     console.log('Connected to XMPP server as:', address.toString());
     // Send presence information to indicate the client is online
-    await xmppClient.send(xml('presence')); 
+    await xmppClient.send(xml('presence', {}, xml('priority', {}, 127))); 
   });
 
   // Event handler for when an error occurs during the connection
