@@ -79,9 +79,7 @@ const Login = () => {
       ]);
 
       // Create an XMPP IQ stanza to request the chat list
-      const chatRequest = xml('iq', { type: 'set', id: 'chat-request' }, [
-        xml('query', { xmlns: 'urn:xmpp:mam:2', queryid: 'f27' })
-      ]);
+      const chatRequest = xml('iq', { type: 'set', id: 'mamReq' }, xml('query', { xmlns: 'urn:xmpp:mam:2', queryid: 'f27' }));
 
       try {
         // Send the roster request IQ stanza
@@ -92,6 +90,7 @@ const Login = () => {
         
         // Handle incoming roster response
         connection.on('stanza', (stanza) => {
+          console.log(stanza)
           if (stanza.is("iq") && stanza.attrs.id === 'roster-request') {
             const query = stanza.getChild('query');
             const items = query.getChildren('item');
@@ -109,16 +108,16 @@ const Login = () => {
             dispatch(setContacts({ contacts }));
           }
 
-          if (stanza.is("message") && stanza.attrs.id === 'chat-request' && stanza.getChild('result')) {
-            console.log('TEST')
+          if (stanza.is("message") && stanza.getChild('result')) {
             let message = {
               to: stanza.getChild('result').getChild('forwarded').getChild('message').getAttr('to'),
               from: stanza.getChild('result').getChild('forwarded').getChild('message').getAttr('from').split('/')[0],
               timestamp: stanza.getChild('result').getChild('forwarded').getChild('delay').getAttr('stamp'),
               content: stanza.getChild('result').getChild('forwarded').getChild('message').getChild('body').getText()
             };
-            console.log('Message recieved:', message);
-            dispatch(setMessages([ ...messages, message ]));
+            console.log(messages)
+            dispatch(setMessages({ messages: [ ...messages, message ] }));
+            console.log("MESSAGE", message)
           }
 
           if (stanza.is('presence')) {
@@ -131,6 +130,7 @@ const Login = () => {
               status = stanza.getChildText('show') || 'chat'; // Extract the status, default to 'chat' if not present
             }     
             // Process the status
+            console.log(status, fromJid)
             // Dispatch action to update contact image (initial call)
             dispatch(addOrUpdateStatus({
                 jid: fromJid,

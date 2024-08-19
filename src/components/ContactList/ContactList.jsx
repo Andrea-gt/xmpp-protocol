@@ -114,7 +114,7 @@ const ContactList = () => {
       flexDirection="column"
       gap="20px"
       width="30%"
-      sx={{ height: '100%', overflowY: 'auto' }}
+      sx={{ maxHeight: '100%', overflowY: 'auto' }}
     >
       <Typography variant="h4" sx={{ color: palette.primary.main, fontWeight: '700' }}> Contacts </Typography>
       {users.length === 0 ? (
@@ -129,7 +129,7 @@ const ContactList = () => {
           minWidth="100%"
           sx={{
             padding: '0.5rem 0.5rem',
-            maxHeight: "65%",
+            height: "65%",
             width: "100%",
             overflowY: "auto",
             '&::-webkit-scrollbar': {

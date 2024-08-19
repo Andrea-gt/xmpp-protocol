@@ -95,7 +95,14 @@ export const chatSlice = createSlice({
          * @param {Object} action - The action containing the new messages array.
          */
         setMessages: (state, action) => {
-            state.messages = action.payload.messages;
+            const newMessages = action.payload.messages;
+            const messageMap = new Map();
+            // Add existing messages to the map
+            state.messages.forEach(msg => messageMap.set(msg.timestamp, msg));
+            // Add new messages to the map
+            newMessages.forEach(msg => messageMap.set(msg.timestamp, msg));
+            // Convert map values to an array and sort by timestamp
+            state.messages = Array.from(messageMap.values()).sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
         },
 
         /**
