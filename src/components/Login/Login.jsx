@@ -74,11 +74,20 @@ const Login = ({ status_list }) => {
       // Create an XMPP IQ stanza to request the chat list
       const chatRequest = xml('iq', { type: 'set', id: 'mamReq' }, xml('query', { xmlns: 'urn:xmpp:mam:2', queryid: 'f27' }));
 
+      // Create an XMPP IQ stanza to request the user pfp.
+      const pfpRequest = xml('iq', { type: 'get', id: `userpfp-request`, to: `${username}@alumchat.lol` },
+        xml('pubsub', { xmlns: 'http://jabber.org/protocol/pubsub' },
+            xml('items', { node: 'urn:xmpp:avatar:data' })
+        )
+      );
+
       try {
         // Send the roster request IQ stanza
         await connection.send(rosterRequest);
         // Send the chat request IQ stanza
         await connection.send(chatRequest);
+        // Send the chat request IQ stanza
+        await connection.send(pfpRequest);
         // Handle incoming roster response
         connection.on('stanza', (stanza) => {
           if (stanza.is("iq") && stanza.attrs.id === 'roster-request') {
@@ -93,7 +102,17 @@ const Login = ({ status_list }) => {
               image: images.find(img => img.jid === item.attrs.jid),
               status: status_list?.find(status => status.jid === item.attrs.jid)
             }));
+
             dispatch(setContacts({ contacts: contacts }));
+
+            // Fetch avatars for each contact
+            contacts.forEach((contact, index) => {
+              const contactpfpRequest = xml('iq', { type: 'get', id: `pfp-request-${contact.jid}`, to: contact.jid },
+                  xml('pubsub', { xmlns: 'http://jabber.org/protocol/pubsub' },
+                      xml('items', { node: 'urn:xmpp:avatar:data' })
+                  )
+              );
+              connection.send(contactpfpRequest);});
           };
 
           if (stanza.is('presence')) {
@@ -134,14 +153,18 @@ const Login = ({ status_list }) => {
               };
               //console.log(message)
             } else if (stanza.getChild('body')) {
+              let image = null
               // Case when only 'body' is present
               const body = stanza.getChild('body');
+              if(stanza.getChild('x')){
+                image = stanza.getChild('x').getChildText('url')
+              }
               message = {
                 to: stanza.attrs.to,  // No 'to' attribute available
                 from: stanza.attrs.from.split('/')[0], // No 'from' attribute available
                 timestamp: new Date().toISOString(), // No timestamp available
                 content: body.getText(),
-                image: null
+                image: image
               };
             } else if (stanza.getChild('event')) {
               // Case when only 'event' is present

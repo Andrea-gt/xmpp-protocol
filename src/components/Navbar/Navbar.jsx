@@ -16,25 +16,28 @@ import { useSelector } from 'react-redux';
 import PersonAdd from '@mui/icons-material/PersonAdd';
 import Logout from '@mui/icons-material/Logout';
 import DeleteIcon from '@mui/icons-material/Delete';
+import EditIcon from '@mui/icons-material/Edit';
 import { useNavigate } from "react-router-dom";
 import { setLogout } from '../../state';
 import { useDispatch } from 'react-redux';
 import { useXMPP } from '../../context/XMPPContext';
 import { xml } from '@xmpp/client';
 import AddContact from '../AddContact/AddContact';
+import EditStatus from '../EditStatus';
 
 // Define status colors
 const statusColors = {
-  offline: "#D90429",
-  connected: "#44B700",
-  busy: "#F6AA1C",
+  dnd: "#D90429",  // Do Not Disturb
+  chat: "#44B700", // Available
+  away: "#F6AA1C", // Away
+  xa: "#0077B6" // Exteded away
 };
 
 // Styled Badge Component
 const StyledBadge = styled(Badge)(({ theme, status }) => ({
   '& .MuiBadge-badge': {
-    backgroundColor: status,
-    color: status,
+    backgroundColor: statusColors[status] || '#A3A3A3',
+    color: statusColors[status] || '#A3A3A3',
     boxShadow: `0 0 0 2px ${theme.palette.background.paper}`,
     '&::after': {
       position: 'absolute',
@@ -55,10 +58,13 @@ const Navbar = () => {
   const user = useSelector((state) => state.user); // Retrieve username from Redux store
   const [anchorEl, setAnchorEl] = useState(null);
   const [openAddContact, setOpenAddContact] = useState(false);
+  const [openEditStatus, setEditStatus] = useState(false);
   const open = Boolean(anchorEl);
   const navigate = useNavigate();
   const { xmppClient } = useXMPP(); 
   const images = useSelector((state) => state.images);
+  const status_list = useSelector((state) => state.statusList);
+
 
   // Determine status
   const userStatus = xmppClient ? 'connected' : 'offline'; // Update this logic as needed
@@ -66,10 +72,14 @@ const Navbar = () => {
 
   const getImageByJid = (jid) => {
     const image = images.find(img => img.jid === jid);
-    console.log(image, jid)
     return image ? image.image : '';
   };
 
+  const getStatusByJid = (jid) => {
+    const status_ = status_list.find(status => status.jid === jid);
+    console.log(status_)
+    return status_ ? status_.status : '';
+  };
   
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
@@ -92,6 +102,11 @@ const Navbar = () => {
       console.error('Logout error:', err); // Log the error for debugging
       alert('An error occurred while logging out. Please try again.'); // Set error message
     }
+  };
+
+  const handleEditStatus = async () => {
+      handleClose(); // Close the menu
+      setEditStatus(true); // Open the editStatus modal
   };
 
   const handleDelete = async () => {
@@ -164,7 +179,7 @@ const Navbar = () => {
               overlap="circular"
               anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
               variant="dot"
-              status={badgeColor} // Pass the status color here
+              status={getStatusByJid(`${user}@alumchat.lol`)} // Pass the status color here
             >
               <Avatar alt="User Avatar" src={getImageByJid(`${user}@alumchat.lol`)} />
             </StyledBadge>
@@ -192,6 +207,10 @@ const Navbar = () => {
             <PersonAdd fontSize="small" sx={{ marginRight: 1 }} />
             Add contact
           </MenuItem>
+          <MenuItem onClick={handleEditStatus}>
+            <EditIcon fontSize="small" sx={{ marginRight: 1 }} />
+            Edit Status
+          </MenuItem>
           <MenuItem onClick={handleLogout}>
             <Logout fontSize="small" sx={{ marginRight: 1 }} />
             Logout
@@ -206,6 +225,9 @@ const Navbar = () => {
       {/* AddContact Modal */}
       <AddContact open={openAddContact} onClose={() => setOpenAddContact(false)} />
 
+      {/* Edit Status Modal */}
+      <EditStatus open={openEditStatus} onClose={() => setEditStatus(false)} />
+        
     </FlexBetween>
   );
 };
