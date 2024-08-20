@@ -98,7 +98,7 @@ const AddContact = ({ open, onClose }) => {
               image: getImageByJid(item.attrs.jid), // Placeholder for image URL (requires additional handling if images are provided)
               status: getStatusByJid(item.attrs.jid) // Contact's status (default to empty string if not present)
             }));
-            dispatch(setContacts({ contacts }));
+            dispatch(setContacts({ contacts: contacts }));
           }
         });
       } catch (error) {

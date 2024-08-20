@@ -1,16 +1,18 @@
 /**
- * Chat component for displaying and sending messages in a chat interface.
+ * @file Chat.js
+ * @description Chat component for displaying and sending messages in a chat interface.
+ * This component handles the chat interface, including displaying individual chat messages
+ * and providing functionality for sending messages and attaching files. The component
+ * integrates with the XMPP protocol for real-time messaging.
  * 
- * This component handles the chat interface, including displaying individual chat messages 
- * and providing functionality for sending messages and attaching files.
- * 
- * Dependencies:
+ * @dependencies:
  * - @mui/material
  * - @mui/icons-material
  * - react-redux
  * - @xmpp/client
  * 
- * Created by [Your Name] - [Date]
+ * Documentation Generated with ChatGPT
+ * @date 2024-08-19
  */
 
 import React, { useState, useEffect } from 'react';
@@ -21,32 +23,40 @@ import {
   Tooltip,
   IconButton,
   TextField,
-  Button,
-  Avatar
+  Button
 } from "@mui/material";
 import AttachFileIcon from '@mui/icons-material/AttachFile';
 import SendIcon from '@mui/icons-material/Send';
 import { useSelector, useDispatch } from 'react-redux';
-import { 
-  setMessages
- } from '../../state';
+import { setMessages } from '../../state';
 import { useXMPP } from '../../context/XMPPContext';
 import { xml } from '@xmpp/client';
 
 /**
  * ChatBubble component displays an individual chat message.
+ * 
  * @param {Object} props - The component props.
  * @param {string} props.from - The sender's username.
  * @param {string} props.message - The message content.
  * @param {number} props.timestamp - The timestamp of the message.
  * @param {boolean} props.isCurrentUser - Flag indicating if the message is from the current user.
+ * 
+ * @returns {JSX.Element} The rendered chat bubble component.
  */
-const ChatBubble = ({ from = 'Unknown', message = '', timestamp = Date.now(), isCurrentUser = false }) => {
+/**
+ * ChatBubble component displays an individual chat message.
+ * 
+ * @param {Object} props - The component props.
+ * @param {string} props.from - The sender's username.
+ * @param {string} props.message - The message content.
+ * @param {number} props.timestamp - The timestamp of the message.
+ * @param {boolean} props.isCurrentUser - Flag indicating if the message is from the current user.
+ * @param {string} [props.image] - The URL of the image to display in the chat bubble (optional).
+ * 
+ * @returns {JSX.Element} The rendered chat bubble component.
+ */
+const ChatBubble = ({ from = 'Unknown', message = '', timestamp = Date.now(), isCurrentUser = false, image = null }) => {
   const { palette } = useTheme();
-  const images = useSelector((state) => state.images); 
-
-  // Find the image for the current sender
-  const userImage = images.find(img => img.jid === `${from}alumchat.lol`) || null;
 
   return (
     <Box
@@ -68,6 +78,13 @@ const ChatBubble = ({ from = 'Unknown', message = '', timestamp = Date.now(), is
           alignSelf: isCurrentUser ? 'flex-end' : 'flex-start',
         }}
       >
+        {image && (
+          <img
+            src={image}
+            alt="Sent image"
+            style={{ maxWidth: '100%', borderRadius: '8px', marginBottom: '10px' }}
+          />
+        )}
         <Typography variant="body1">{message}</Typography>
         <Typography variant="caption" align="right" sx={{ display: 'block', marginTop: '5px' }}>
           {new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -79,6 +96,8 @@ const ChatBubble = ({ from = 'Unknown', message = '', timestamp = Date.now(), is
 
 /**
  * Chat component manages the chat interface and message sending functionality.
+ * 
+ * @returns {JSX.Element} The rendered chat component.
  */
 const Chat = () => {
   const { palette } = useTheme();
@@ -91,7 +110,10 @@ const Chat = () => {
   const chat_jid = useSelector((state) => state.chat_jid); // Get the chat JID from Redux store
   const { xmppClient } = useXMPP(); // Get the XMPP client from context
 
-  // Update filtered messages when messages or username change
+  /**
+   * Filters messages relevant to the current chat between the user and the chat_jid.
+   * Updates the filteredMessages state when messages, username, or chat_jid change.
+   */
   useEffect(() => {
     const updatedMessages = messages.filter(
       msg => (msg.from && msg.to && msg.from.split('@')[0] === username && msg.to === chat_jid) ||
@@ -101,7 +123,8 @@ const Chat = () => {
   }, [messages, username, chat_jid]);
 
   /**
-   * Handles file selection and updates the state.
+   * Handles file selection and updates the file state.
+   * 
    * @param {Event} event - The change event from the file input.
    */
   const handleFileChange = (event) => {
@@ -109,7 +132,8 @@ const Chat = () => {
   };
 
   /**
-   * Handles message input changes and updates the state.
+   * Handles message input changes and updates the message state.
+   * 
    * @param {Event} event - The change event from the text field.
    */
   const handleMessageChange = (event) => {
@@ -117,32 +141,105 @@ const Chat = () => {
   };
 
   /**
-   * Handles message submission by sending the message via XMPP.
+   * Uploads the selected file to the specified URL.
+   * 
+   * @param {File} file - The file to be uploaded.
+   * @param {string} uploadUrl - The URL to upload the file to.
+   */
+  const handleUploadFile = async (file, uploadUrl) => {
+    try {
+      const response = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': file.type,
+          'Content-Length': file.size,
+        },
+        body: file,
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to upload file: ${response.statusText}`);
+      }
+      console.log('File uploaded successfully');
+    } catch (error) {
+      console.error('Error uploading file:', error);
+    }
+  };
+
+  /**
+   * Handles message submission by sending the message or file via XMPP.
    */
   const handleSubmit = async () => {
-    if (message) {
+    if (message || file) {
       const timestamp = new Date().toISOString();
 
-      // Create a message stanza
-      const messageObject = {
-        to: chat_jid,
-        from: `${username}@alumchat.lol`,
-        timestamp: timestamp,
-        content: message
-      };
+      if (file) {
+        // Request file upload slot
+        const requestSlot = xml('iq', { type: 'get', to: 'httpfileupload.alumchat.lol', id: 'upload-request', xmlns: 'jabber:client' }, [
+          xml('request', { xmlns: 'urn:xmpp:http:upload:0', filename: file.name, size: file.size, 'content-type': file.type })
+        ]);
 
-      // Create a message stanza
-      const messageRequest = xml('message', { type: 'chat', to: chat_jid, from: `${username}@alumchat.lol` }, [
+        try {
+          // Send the slot request IQ stanza
+          await xmppClient.send(requestSlot);
+          // Handle incoming roster response
+          xmppClient.on('stanza', async (stanza) => {
+            if (stanza.is("iq") && stanza.attrs.id === 'upload-request') {
+              const slot = stanza.getChild('slot', 'urn:xmpp:http:upload:0');
+              const url = slot.getChild('put').attrs.url;
+              
+              console.log(url)
+
+              await handleUploadFile(file, url);
+
+              const messageRequest = xml('message', { type: 'chat', to: chat_jid, from: `${username}@alumchat.lol` }, [
+                xml('body', {}, `File sent: ${file.name}`),
+                xml('x', { xmlns: 'jabber:x:oob' }, [
+                  xml('url', {}, url),
+                  xml('desc', {}, file.name)
+                ]),
+                xml('request', { xmlns: 'urn:xmpp:receipts' }),
+                xml('markable', { xmlns: 'urn:xmpp:chat-markers:0' })
+              ]);
+
+              await xmppClient.send(messageRequest);
+              console.log('Message with file URL sent');
+
+              const messageObject = {
+                to: chat_jid,
+                from: `${username}@alumchat.lol`,
+                timestamp: timestamp,
+                content: `File sent: ${file.name}`,
+                image: url,
+              };
+
+              dispatch(setMessages({ messages: [...messages, messageObject] }));
+            }
+          });
+        } catch (error) {
+          console.error('Failed to handle file upload:', error);
+        }
+      } else if (message) {
+        const messageObject = {
+          to: chat_jid,
+          from: `${username}@alumchat.lol`,
+          timestamp: timestamp,
+          content: message,
+          image: null
+        };
+
+        const messageRequest = xml('message', { type: 'chat', to: chat_jid, from: `${username}@alumchat.lol` }, [
           xml('body', {}, message),
-      ]);
+        ]);
 
-      try {
-        await xmppClient.send(messageRequest);
-        console.log('Message request sent');
-      } catch (error) {
-        console.error('Failed to send message request:', error);
+        try {
+          await xmppClient.send(messageRequest);
+          console.log('Message sent');
+          dispatch(setMessages({ messages: [...messages, messageObject] }));
+        } catch (error) {
+          console.error('Failed to send message request:', error);
+        }
       }
-      dispatch(setMessages({ messages: [...messages, messageObject] }));
       setFile(null);
       setMessage('');
     }
@@ -165,62 +262,62 @@ const Chat = () => {
         flexDirection="column"
         width="100%"
         height="90%"
-        padding="2rem"
         overflow="auto"
         justifyContent={filteredMessages.length === 0 ? 'center' : 'flex-start'}
-        sx={{ background: 'rgba(0, 0, 0, 0.6)' }}
+        sx={{ 
+          background: 'rgba(0, 0, 0, 0.6)',
+          marginBottom: '10px',
+           padding: '2rem' 
+          }}
       >
-        {filteredMessages.length === 0 ? (
+        {filteredMessages.length > 0 ? (
+          filteredMessages.map((msg, i) => (
+            <ChatBubble
+              key={i}
+              from={msg.from.split('@')[0]}
+              message={msg.content}
+              timestamp={msg.timestamp}
+              isCurrentUser={msg.from.split('@')[0] === username}
+              image={msg.image}
+            />
+          ))
+        ) : (
           <Typography color="#F0F0F0" textAlign="center" variant="h6">
             It is quiet here! Start the conversation by sending a message or attaching a file.
           </Typography>
-        ) : (
-          filteredMessages.map((msg, index) => (
-            <ChatBubble
-              key={index}
-              from={msg.from ? msg.from.split('@')[0] : 'Unknown'}
-              message={msg.content || ''}
-              timestamp={msg.timestamp || Date.now()}
-              isCurrentUser={msg.from ? msg.from.split('@')[0] === username : false}
-            />
-          ))
         )}
       </Box>
       <Box
         display="flex"
-        flexDirection="row"
-        width="100%"
-        height="10%"
         alignItems="center"
-        padding="0 0.8rem"
-        gap="10px"
-        sx={{ backgroundColor: palette.grey[200] }}
+        padding="0.5rem"
+        backgroundColor={palette.background.default}
+        borderRadius="0.5rem"
       >
-        <TextField
-          fullWidth
-          variant="outlined"
-          placeholder="Type your message..."
-          value={message}
-          size="small"
-          sx={{ backgroundColor: "#F0F0F0" }}
-          onChange={handleMessageChange}
-        />
-        <input
-          accept="image/*,video/*,audio/*,.pdf,.doc,.docx"
-          style={{ display: 'none' }}
-          id="file-upload"
-          type="file"
-          onChange={handleFileChange}
-        />
-        <Tooltip title="Attach a file">
-          <IconButton component="label" htmlFor="file-upload">
+        <Tooltip title="Attach File">
+          <IconButton component="label">
             <AttachFileIcon />
+            <input
+              type="file"
+              accept="image/*, .pdf, .doc, .docx, .xls, .xlsx"
+              hidden
+              onChange={handleFileChange}
+            />
           </IconButton>
         </Tooltip>
+        <TextField
+          fullWidth
+          size="small"
+          variant="outlined"
+          placeholder="Type a message"
+          value={message}
+          onChange={handleMessageChange}
+        />
         <Button
           variant="contained"
           color="primary"
           endIcon={<SendIcon />}
+          sx={{ marginLeft: '10px' }}
           onClick={handleSubmit}
         >
           Send

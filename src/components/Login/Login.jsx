@@ -9,7 +9,7 @@
  * Documentation Generated with ChatGPT
  */
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Box,
   Typography,
@@ -38,6 +38,7 @@ import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import { useXMPP } from '../../context/XMPPContext';
 import { xml } from '@xmpp/client';
 
+
 // Schema for validating login form fields using Yup
 const loginSchema = yup.object().shape({
   username: yup.string().required("*Required"), // Username is required
@@ -50,24 +51,10 @@ const Login = () => {
   const [errorMessage, setErrorMessage] = React.useState(''); // State for managing error messages
   const navigate = useNavigate(); // Hook for navigation
   const { updateClient } = useXMPP(); // Custom hook for XMPP context
-  const images = useSelector((state) => state.images);
-  const status_list = useSelector((state) => state.statusList);
+  let images = useSelector((state) => state.images);
+  let status_list = useSelector((state) => state.statusList);
   const messages = useSelector((state) => state.messages);
 
-  const getImageByJid = (jid) => {
-    console.log('Looking for image with JID:', jid);
-    const image = images.find(img => img.jid === jid);
-    console.log('Found image:', image);
-    return image ? image.image : ''; // Return image URL or empty string if not found
-  };
-  
-  const getStatusByJid = (jid) => {
-    console.log('Looking for status with JID:', jid);
-    console.log(status_list)
-    const status = status_list.find(status => status.jid === jid);
-    console.log('Found status:', status);
-    return status ? status.status : ''; // Return status or empty string if not found
-  };
 
   // Handle form submission
   const handleSubmit = async (values) => {
@@ -76,6 +63,7 @@ const Login = () => {
       // Attempt to connect to XMPP server
       const connection = await connectXMPP(username, password);
       updateClient(connection); // Update XMPP client in context
+
       dispatch(setLogin({ user: username })); // Update Redux store with logged-in user
 
       // Create an XMPP IQ stanza to request the contact list
@@ -93,23 +81,24 @@ const Login = () => {
         await connection.send(chatRequest);
         // Handle incoming roster response
         connection.on('stanza', (stanza) => {
-          console.log(stanza)
           if (stanza.is("iq") && stanza.attrs.id === 'roster-request') {
             const query = stanza.getChild('query');
             const items = query.getChildren('item');
 
-            // Optionally wait a bit to ensure the request is processed
-            new Promise(resolve => setTimeout(resolve, 4000)); // 1-second delay
             // Transform XML data into JSON format
+            console.log("TFMIONFWEFNW YUDA")
+            console.log(status_list)
+
             const contacts = items.map(item => ({
               jid: item.attrs.jid, // JID of the contact
               name: item.attrs.name || 'No name', // Contact's name (default to 'No name' if not present)
               username: item.attrs.jid.split('@')[0], // Extract username from JID
-              image: getImageByJid(item.attrs.jid), // Placeholder for image URL (requires additional handling if images are provided)
-              status: getStatusByJid(item.attrs.jid) // Contact's status (default to empty string if not present)
+              image: images.find(img => img.jid === item.attrs.jid),
+              status: status_list.find(status => status.jid === item.attrs.jid)
             }));
-            dispatch(setContacts({ contacts }));
-          }
+            console.log(contacts)
+            dispatch(setContacts({ contacts: contacts }));
+          };
 
           if (stanza.is('presence')) {
             let status = '';
@@ -137,11 +126,21 @@ const Login = () => {
               const result = stanza.getChild('result');
               const forwardedMessage = result.getChild('forwarded').getChild('message');
               const delay = result.getChild('forwarded').getChild('delay');
+              let image = null
+              // Check for an 'x' element with the 'jabber:x:oob' namespace
+              const oobElement = forwardedMessage.getChild('x', 'jabber:x:oob');
+              if (oobElement) {
+                const urlElement = oobElement.getChild('url');
+                if (urlElement) {
+                  image = urlElement.getText(); // Retrieve the URL of the image
+                }
+              }
               message = {
                 to: forwardedMessage.getAttr('to'),
                 from: forwardedMessage.getAttr('from').split('/')[0],
                 timestamp: delay.getAttr('stamp'),
-                content: forwardedMessage.getChild('body').getText()
+                content: forwardedMessage.getChild('body').getText(),
+                image: image
               };
               console.log(message)
             } else if (stanza.getChild('body')) {
@@ -151,7 +150,8 @@ const Login = () => {
                 to: stanza.attrs.to,  // No 'to' attribute available
                 from: stanza.attrs.from.split('/')[0], // No 'from' attribute available
                 timestamp: new Date().toISOString(), // No timestamp available
-                content: body.getText()
+                content: body.getText(),
+                image: null
               };
             } else if (stanza.getChild('event')) {
               // Case when only 'event' is present
@@ -159,6 +159,7 @@ const Login = () => {
               const dataChild = stanza.getChild('event').getChild('items').getChild('item').getChild('data');
 
               if (dataChild) {
+                console.log("MAGE", stanza)
                 const base64Image = dataChild.text();
                 const imageURL = `data:image/jpeg;base64,${base64Image}`;
                 // Dispatch action to update contact image (initial call)
@@ -182,6 +183,14 @@ const Login = () => {
       setErrorMessage("Login failed. Please check your username and password."); // Set the error message
     }
   };
+
+  useEffect(() => {
+    // This function will be called when the component mounts
+    return () => {
+      // This function will be called when the component unmounts
+      // Cleanup XMPP connection or listeners if needed
+    };
+  }, []); // Empty dependency array ensures this effect runs once on mount and cleanup on unmount
 
   return (
     <FlexBetween 

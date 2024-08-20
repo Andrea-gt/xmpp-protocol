@@ -1,25 +1,16 @@
-/**
- * Redux Slice for Chat Management
- * 
- * This module defines a Redux slice for managing chat-related state in the application.
- * It includes actions and reducers for handling user authentication, theme mode, and chat data.
- * 
- * Documentation Generated with ChatGPT
- */
-
 import { createSlice } from "@reduxjs/toolkit";
 
 // Initial state for the chat slice
 const initialState = {
     mode: "light",     // Theme mode (light or dark)
     user: null,        // Currently logged-in user
-    picture: null,      // State to hold user profile picture
+    picture: null,     // State to hold user profile picture
     token: null,       // Authentication token
-    contacts: [],       // State to hold contacts
-    chat_jid: null,         // State to hold chat data
+    contacts: [],      // State to hold contacts
+    chat_jid: null,    // State to hold chat data
     messages: [],      // State to hold messages
-    images: [],         // State to hold user images
-    statusList: []
+    images: [],        // State to hold user images
+    statusList: []     // State to hold contact status
 };
 
 // Create the chat slice with actions and reducers
@@ -32,7 +23,7 @@ export const chatSlice = createSlice({
          * @param {Object} state - The current state.
          */
         setMode: (state) => {
-            state.mode = state.mode === "light" ? "dark" : "light";
+            return Object.assign({}, state, { mode: state.mode === "light" ? "dark" : "light" });
         },
         
         /**
@@ -41,7 +32,7 @@ export const chatSlice = createSlice({
          * @param {Object} action - The action containing the user data.
          */
         setLogin: (state, action) => {
-            state.user = action.payload.user;
+            return Object.assign({}, state, { user: action.payload.user });
         },
         
         /**
@@ -49,7 +40,7 @@ export const chatSlice = createSlice({
          * @param {Object} state - The current state.
          */
         setLogout: (state) => {
-            state.user = null;
+            return Object.assign({}, state, { user: null });
         },
 
         /**
@@ -58,7 +49,7 @@ export const chatSlice = createSlice({
          * @param {Object} action - The action containing the contacts data.
          */
         setContacts: (state, action) => {
-            state.contacts = action.payload.contacts;
+            return Object.assign({}, state, { contacts: action.payload.contacts });
         },
 
         /**
@@ -68,7 +59,7 @@ export const chatSlice = createSlice({
          */
         updateContactStatus: (state, action) => {
             const { jid, status, image } = action.payload;
-            state.contacts = state.contacts.map(contact => {
+            const updatedContacts = state.contacts.map(contact => {
                 if (contact.jid === jid) {
                     return {
                         ...contact,
@@ -78,8 +69,8 @@ export const chatSlice = createSlice({
                 }
                 return contact;
             });
-            console.log(state.contacts)
-        },       
+            return Object.assign({}, state, { contacts: updatedContacts });
+        },
 
         /**
          * Set the chats state with a new array of messages.
@@ -87,7 +78,7 @@ export const chatSlice = createSlice({
          * @param {Object} action - The action containing the new chats array.
          */
         setChat: (state, action) => {
-            state.chat_jid = action.payload.chat_jid;
+            return Object.assign({}, state, { chat_jid: action.payload.chat_jid });
         },
         
         /**
@@ -103,7 +94,8 @@ export const chatSlice = createSlice({
             // Add new messages to the map
             newMessages.forEach(msg => messageMap.set(msg.timestamp, msg));
             // Convert map values to an array and sort by timestamp
-            state.messages = Array.from(messageMap.values()).sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+            const updatedMessages = Array.from(messageMap.values()).sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+            return Object.assign({}, state, { messages: updatedMessages });
         },
 
         /**
@@ -111,52 +103,34 @@ export const chatSlice = createSlice({
          * @param {Object} state - The current state.
          * @param {Object} action - The action containing the image data.
          */
-
         addOrUpdateImage: (state, action) => {
             const { jid, image } = action.payload;
-            const imageIndex = state.images.findIndex(img => img.jid === jid);
-
+            const updatedImages = [...state.images];
+            const imageIndex = updatedImages.findIndex(img => img.jid === jid);
             if (imageIndex !== -1) {
-                // Update existing image
-                state.images[imageIndex] = { jid, image };
+                updatedImages[imageIndex] = { jid, image };
             } else {
-                // Add new image
-                state.images.push({ jid, image });
+                updatedImages.push({ jid, image });
             }
+            return Object.assign({}, state, { images: updatedImages });
         },
 
         /**
          * Add or update a status in the statusList state.
          * @param {Object} state - The current state.
-         * @param {Object} action - The action containing the image data.
+         * @param {Object} action - The action containing the status data.
          */
         addOrUpdateStatus: (state, action) => {
-            console.log("Reducer received action:", action);
             const { jid, status } = action.payload;
-            if (!jid || status === undefined) {
-                console.error('Invalid payload for addOrUpdateStatus:', action.payload);
-                return;
-            }
-        
-            // Ensure state.statusList is an array
-            if (!Array.isArray(state.statusList)) {
-                console.error('Expected statusList to be an array, but got:', state.statusList);
-                return;
-            }
-        
-            const statusIndex = state.statusList.findIndex(s => s.jid === jid);
+            const updatedStatusList = [...state.statusList];
+            const statusIndex = updatedStatusList.findIndex(s => s.jid === jid);
             if (statusIndex !== -1) {
-                // Update existing status
-                console.log(`Updating existing status for JID ${jid} to ${status}`);
-                state.statusList[statusIndex] = { jid, status };
+                updatedStatusList[statusIndex] = { jid, status };
             } else {
-                // Add new status
-                console.log(`Adding new status for JID ${jid}: ${status}`);
-                state.statusList.push({ jid, status });
+                updatedStatusList.push({ jid, status });
             }
-        
-            console.log("Updated statusList:", state.statusList);
-        }
+            return Object.assign({}, state, { statusList: updatedStatusList });
+        },
     },
 });
 
