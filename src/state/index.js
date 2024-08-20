@@ -129,7 +129,8 @@ export const chatSlice = createSlice({
             } else {
                 updatedStatusList.push({ jid, status });
             }
-            return Object.assign({}, state, { statusList: updatedStatusList });
+            if(updatedStatusList){
+            return Object.assign({}, state, { statusList: updatedStatusList });}
         },
     },
 });

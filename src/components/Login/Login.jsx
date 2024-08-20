@@ -45,16 +45,16 @@ const loginSchema = yup.object().shape({
   password: yup.string().required("*Required"), // Password is required
 });
 
-const Login = () => {
+const Login = ({ status_list }) => {
   const { palette } = useTheme(); // Retrieve theme palette from Material-UI
   const dispatch = useDispatch(); // Get dispatch function from Redux
   const [errorMessage, setErrorMessage] = React.useState(''); // State for managing error messages
   const navigate = useNavigate(); // Hook for navigation
   const { updateClient } = useXMPP(); // Custom hook for XMPP context
   let images = useSelector((state) => state.images);
-  let status_list = useSelector((state) => state.statusList);
+  //let status_list = useSelector((state) => state.statusList);
   const messages = useSelector((state) => state.messages);
-
+  console.log(status_list)
 
   // Handle form submission
   const handleSubmit = async (values) => {
@@ -84,19 +84,15 @@ const Login = () => {
           if (stanza.is("iq") && stanza.attrs.id === 'roster-request') {
             const query = stanza.getChild('query');
             const items = query.getChildren('item');
-
+                
             // Transform XML data into JSON format
-            console.log("TFMIONFWEFNW YUDA")
-            console.log(status_list)
-
             const contacts = items.map(item => ({
               jid: item.attrs.jid, // JID of the contact
               name: item.attrs.name || 'No name', // Contact's name (default to 'No name' if not present)
               username: item.attrs.jid.split('@')[0], // Extract username from JID
               image: images.find(img => img.jid === item.attrs.jid),
-              status: status_list.find(status => status.jid === item.attrs.jid)
+              status: status_list?.find(status => status.jid === item.attrs.jid)
             }));
-            console.log(contacts)
             dispatch(setContacts({ contacts: contacts }));
           };
 
@@ -108,12 +104,6 @@ const Login = () => {
             } else {
               status = stanza.getChildText('show') || 'chat'; // Extract the status, default to 'chat' if not present
             }
-            console.log("Dispatching action with payload:", { jid: fromJid, status: status });
-            console.log("Stanza values:", {
-              from: stanza.attrs.from,
-              type: stanza.attrs.type,
-              statusText: stanza.getChildText('show')
-            });
             // Dispatch actions to update contact image and status
             dispatch(addOrUpdateStatus({ jid: fromJid, status: status }));
             dispatch(updateContactStatus({ jid: fromJid, status: status }));
@@ -142,7 +132,7 @@ const Login = () => {
                 content: forwardedMessage.getChild('body').getText(),
                 image: image
               };
-              console.log(message)
+              //console.log(message)
             } else if (stanza.getChild('body')) {
               // Case when only 'body' is present
               const body = stanza.getChild('body');
@@ -159,7 +149,7 @@ const Login = () => {
               const dataChild = stanza.getChild('event').getChild('items').getChild('item').getChild('data');
 
               if (dataChild) {
-                console.log("MAGE", stanza)
+                console.log("IMAGEN", stanza)
                 const base64Image = dataChild.text();
                 const imageURL = `data:image/jpeg;base64,${base64Image}`;
                 // Dispatch action to update contact image (initial call)
@@ -183,14 +173,6 @@ const Login = () => {
       setErrorMessage("Login failed. Please check your username and password."); // Set the error message
     }
   };
-
-  useEffect(() => {
-    // This function will be called when the component mounts
-    return () => {
-      // This function will be called when the component unmounts
-      // Cleanup XMPP connection or listeners if needed
-    };
-  }, []); // Empty dependency array ensures this effect runs once on mount and cleanup on unmount
 
   return (
     <FlexBetween 

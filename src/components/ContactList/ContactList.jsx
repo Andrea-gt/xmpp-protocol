@@ -92,7 +92,7 @@ const StyledBadge = styled(Badge)(({ theme, status }) => ({
  * 
  * @returns {JSX.Element} The ContactList component
  */
-const ContactList = () => {
+const ContactList = ({ statusList, images }) => {
   const { palette } = useTheme();
   const dispatch = useDispatch(); // Get dispatch function from Redux
   const users = useSelector((state) => state.contacts); 
@@ -147,8 +147,9 @@ const ContactList = () => {
             scrollbarColor: `${palette.primary.main} ${'#F5F5F5'}`, // For Firefox
           }}
         >
-          {users.map((user) => (
-            <Box
+          {users.map((user) => {
+            return (
+              <Box
               key={user.username}
               display="flex"
               flexDirection="row"
@@ -163,7 +164,7 @@ const ContactList = () => {
               onClick={() => handleUserClick(user, users)}
             >
               <StyledBadge
-                status={user.status}
+                status={statusList ? statusList.find(s => s.jid === user.jid)?.status : ''}
                 overlap="circular"
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
                 variant='dot'
@@ -171,7 +172,7 @@ const ContactList = () => {
               >
                 <Avatar
                   alt={user.username}
-                  src={user.image}
+                  src={images.find(s => s.jid === user.jid)?.image}
                   sx={{ width: 50, height: 50 }}
                 />
               </StyledBadge>
@@ -180,7 +181,10 @@ const ContactList = () => {
                 <Typography sx={{ color: 'grey' }}>{user.name}, {user.jid}</Typography>
               </Box>
             </Box>
-          ))}
+            )
+          }
+            
+          )}
         </Box>
       )}
     </Box>

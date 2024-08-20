@@ -28,6 +28,8 @@ const App = () => {
   // Get user and mode from Redux store
   const user = useSelector((state) => state.user);
   const mode = useSelector((state) => state.mode);
+  const statusList = useSelector((state) => state.statusList);
+  const images = useSelector((state) => state.images);
 
   // Create a theme object using the mode from Redux store
   const theme = useMemo(() => createTheme(themeSettings(mode)), [mode]);
@@ -41,12 +43,12 @@ const App = () => {
           <XMPPProvider>
             <Routes>
               {/* Route for login page */}
-              <Route path="/" element={<Forms />} />
+              <Route path="/" element={<Forms statusList={statusList}/>} />
               {/* Route for home page, redirect to login if user is not authenticated */}
               <Route 
                 path="/home" 
                 element={
-                  user ? <Home /> : <Navigate to="/" /> 
+                  user ? <Home statusList={statusList} images={images}/> : <Navigate to="/" /> 
                 } 
               />
             </Routes>

@@ -24,7 +24,7 @@ export const connectXMPP = async (username, password) => {
     domain: 'alumchat.lol',                // Domain of the XMPP server
     username: username,                   // Username for authentication
     password: password,                   // Password for authentication
-    resource: 'xpp-client'                // Resource name of client
+    resource: 'gajimbo3'                // Resource name of client
   });
 
   // Event handler for when the client successfully connects to the XMPP server

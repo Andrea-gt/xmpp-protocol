@@ -13,7 +13,7 @@ import Navbar from '../../components/Navbar/Navbar';
 import ContactList from '../../components/ContactList/ContactList';
 import Chat from '../../components/Chat/Chat';
 
-const Home = () => {
+const Home = ({ statusList, images }) => {
   const { palette } = useTheme();
   return (
     <FlexBetween
@@ -41,7 +41,7 @@ const Home = () => {
           height="90%"
           sx={{ padding: '5rem' }}
         >
-          <ContactList />
+          <ContactList statusList={statusList} images={images}/>
           <Chat />
         </Box>
       </Box>
