@@ -18,7 +18,6 @@ import { xml } from '@xmpp/client';
 import { setContacts } from '../../state';
 import { useDispatch, useSelector } from 'react-redux';
 
-
 const AddContact = ({ open, onClose }) => {
   const { palette } = useTheme(); // Get theme palette from Material-UI
   const { xmppClient } = useXMPP(); // Access XMPP client from context

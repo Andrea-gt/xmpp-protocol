@@ -76,6 +76,8 @@ const ChatBubble = ({ from = 'Unknown', message = '', timestamp = Date.now(), is
           backgroundColor: isCurrentUser ? palette.primary.main : palette.grey[300],
           color: isCurrentUser ? palette.primary.contrastText : palette.text.primary,
           alignSelf: isCurrentUser ? 'flex-end' : 'flex-start',
+          wordBreak: 'break-word', // Ensures long words break to the next line
+          overflowWrap: 'break-word', // Ensures wrapping in case of long continuous text  
         }}
       >
         {image && (

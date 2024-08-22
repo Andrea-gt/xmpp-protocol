@@ -31,7 +31,8 @@ import {
   updateContactStatus, 
   addOrUpdateImage,
   addOrUpdateStatus,
-  setMessages
+  setMessages,
+  setNotification
  } from '../../state';
 import AccountCircleOutlinedIcon from '@mui/icons-material/AccountCircleOutlined';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
@@ -62,7 +63,6 @@ const Login = ({ status_list, toggleForm }) => {
       // Attempt to connect to XMPP server
       const connection = await connectXMPP(username, password);
       updateClient(connection); // Update XMPP client in context
-
       dispatch(setLogin({ user: username })); // Update Redux store with logged-in user
 
       // Create an XMPP IQ stanza to request the contact list
@@ -87,6 +87,7 @@ const Login = ({ status_list, toggleForm }) => {
         await connection.send(chatRequest);
         // Send the chat request IQ stanza
         await connection.send(pfpRequest);
+
         // Handle incoming roster response
         connection.on('stanza', (stanza) => {
           if (stanza.is("iq") && stanza.attrs.id === 'roster-request') {
@@ -120,18 +121,26 @@ const Login = ({ status_list, toggleForm }) => {
           };
 
           if (stanza.is('presence')) {
-            let status = '';
-            let status_text = null;
-            let fromJid = stanza.attrs.from.split('/')[0]; // Get the JID of the user sending the presence
-            if (stanza.attrs && stanza.attrs.type === "unavailable") {
-              status = "unavailable";
+            if(stanza.attrs.type === "subscribe"){
+              // Set Snackbar message and open it
+              dispatch(setNotification({ notification: `You've been added by ${stanza.attrs.from.split('@')[0]}!`, type: 'subscription', from: stanza.attrs.from }));
             } else {
-              status = stanza.getChildText('show') || 'chat'; // Extract the status, default to 'chat' if not present
-              status_text = stanza.getChildText('status') || null;
+              let status = '';
+              let status_text = null;
+              let fromJid = stanza.attrs.from.split('/')[0]; // Get the JID of the user sending the presence
+
+              if (stanza.attrs && stanza.attrs.type === "unavailable") {
+                status = "unavailable";
+              } else {
+                status = stanza.getChildText('show') || 'chat'; // Extract the status, default to 'chat' if not present
+                status_text = stanza.getChildText('status') || null;
+              }
+
+              console.log(fromJid, status)
+              // Dispatch actions to update contact image and status
+              dispatch(addOrUpdateStatus({ jid: fromJid, status: status, status_text: status_text }));
+              dispatch(updateContactStatus({ jid: fromJid, status: status, status_text: status_text }));
             }
-            // Dispatch actions to update contact image and status
-            dispatch(addOrUpdateStatus({ jid: fromJid, status: status, status_text: status_text }));
-            dispatch(updateContactStatus({ jid: fromJid, status: status, status_text: status_text }));
           }
 
           if (stanza.is("message")) {
@@ -172,13 +181,16 @@ const Login = ({ status_list, toggleForm }) => {
                 content: body.getText(),
                 image: image
               };
+
+              // Set Snackbar message and open it
+              dispatch(setNotification({ notification: `New message from ${message.from}`, type: 'message', from: message.from }));
+
             } else if (stanza.getChild('event')) {
               // Case when only 'event' is present
               const fromJid = stanza.attrs.from.split('/')[0]; // Get the JID of the sender
               const dataChild = stanza.getChild('event').getChild('items').getChild('item').getChild('data');
 
               if (dataChild) {
-                console.log("IMAGEN", stanza)
                 const base64Image = dataChild.text();
                 const imageURL = `data:image/jpeg;base64,${base64Image}`;
                 // Dispatch action to update contact image (initial call)
@@ -191,7 +203,6 @@ const Login = ({ status_list, toggleForm }) => {
             }
           }
         });
-
         setErrorMessage(''); // Clear any previous error message
         navigate("/home"); // Navigate to the home page upon successful login
       } catch (error) {

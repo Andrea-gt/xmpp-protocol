@@ -10,7 +10,8 @@ const initialState = {
     chat_jid: null,    // State to hold chat data
     messages: [],      // State to hold messages
     images: [],        // State to hold user images
-    statusList: []     // State to hold contact status
+    statusList: [],   // State to hold contact status
+    notification: null  // State to hold the notifications
 };
 
 // Create the chat slice with actions and reducers
@@ -24,6 +25,16 @@ export const chatSlice = createSlice({
          */
         setMode: (state) => {
             return Object.assign({}, state, { mode: state.mode === "light" ? "dark" : "light" });
+        },
+
+        /**
+         * Toggle the theme mode between light and dark.
+         * @param {Object} state - The current state.
+         */
+        setNotification: (state, action) => {
+            return Object.assign({}, state, { notification: action.payload.notification, 
+                type: action.payload.type,
+                from: action.payload.from });
         },
         
         /**
@@ -146,7 +157,8 @@ export const {
     setChat,
     setMessages,
     addOrUpdateImage,
-    addOrUpdateStatus
+    addOrUpdateStatus,
+    setNotification
 } = chatSlice.actions;
 
 // Export the reducer to be used in the store

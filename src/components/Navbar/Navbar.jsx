@@ -77,7 +77,6 @@ const Navbar = () => {
 
   const getStatusByJid = (jid) => {
     const status_ = status_list.find(status => status.jid === jid);
-    console.log(status_)
     return status_ ? status_ : null;
   };
   

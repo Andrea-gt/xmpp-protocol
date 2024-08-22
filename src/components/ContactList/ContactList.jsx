@@ -186,7 +186,6 @@ const ContactList = ({ statusList, images }) => {
             </Box>
             )
           }
-            
           )}
         </Box>
       )}
