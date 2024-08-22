@@ -111,7 +111,7 @@ const ContactList = ({ statusList, images }) => {
       display="flex"
       flexDirection="column"
       gap="20px"
-      width="30%"
+      width="40%"
       sx={{ maxHeight: '100%', overflowY: 'auto' }}
     >
       <Typography variant="h4" sx={{ color: palette.primary.main, fontWeight: '700' }}> Contacts </Typography>
@@ -178,6 +178,9 @@ const ContactList = ({ statusList, images }) => {
               </StyledBadge>
               <Box display="flex" flexDirection="column">
                 <Typography sx={{ color: palette.primary.dark, fontWeight: '500' }}>{user.username}</Typography>
+                <Typography sx={{ fontSize: "9px", color: palette.primary.main }}>
+                  {statusList ? (statusList.find(s => s.jid === user.jid)?.status_text ? `"${statusList.find(s => s.jid === user.jid)?.status_text}"` : '') : ''}
+                </Typography>
                 <Typography sx={{ color: 'grey' }}>{user.name}, {user.jid}</Typography>
               </Box>
             </Box>

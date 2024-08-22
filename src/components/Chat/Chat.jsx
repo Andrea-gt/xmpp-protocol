@@ -81,7 +81,7 @@ const ChatBubble = ({ from = 'Unknown', message = '', timestamp = Date.now(), is
         {image && (
           <img
             src={image}
-            alt="Sent image"
+            alt="Sent file"
             style={{ maxWidth: '100%', borderRadius: '8px', marginBottom: '10px' }}
           />
         )}
@@ -294,9 +294,17 @@ const Chat = () => {
         backgroundColor={palette.background.default}
         borderRadius="0.5rem"
       >
-        <Tooltip title="Attach File">
+        <Tooltip 
+          title={file ? "File selected" : "Attach File"} 
+          sx={{
+            '& .MuiTooltip-tooltip': {
+              backgroundColor: file ? palette.primary.main : 'inherit',
+              color: file ? palette.primary.contrastText : 'inherit',
+            }
+          }}
+        >
           <IconButton component="label">
-            <AttachFileIcon />
+            <AttachFileIcon sx={{ color: file ? palette.primary.main : 'inherit' }} />
             <input
               type="file"
               accept="image/*, .pdf, .doc, .docx, .xls, .xlsx"
@@ -305,6 +313,7 @@ const Chat = () => {
             />
           </IconButton>
         </Tooltip>
+
         <TextField
           fullWidth
           size="small"

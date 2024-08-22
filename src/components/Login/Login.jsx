@@ -95,13 +95,18 @@ const Login = ({ status_list }) => {
             const items = query.getChildren('item');
                 
             // Transform XML data into JSON format
-            const contacts = items.map(item => ({
-              jid: item.attrs.jid, // JID of the contact
-              name: item.attrs.name || 'No name', // Contact's name (default to 'No name' if not present)
-              username: item.attrs.jid.split('@')[0], // Extract username from JID
-              image: images.find(img => img.jid === item.attrs.jid),
-              status: status_list?.find(status => status.jid === item.attrs.jid)
-            }));
+            const contacts = items.map(item => {
+              // Find the status entry for the current item
+              const statusEntry = status_list?.find(status => status.jid === item.attrs.jid) || {};
+              return {
+                jid: item.attrs.jid, // JID of the contact
+                name: item.attrs.name || 'No name', // Contact's name (default to 'No name' if not present)
+                username: item.attrs.jid.split('@')[0], // Extract username from JID
+                image: images.find(img => img.jid === item.attrs.jid),
+                status: statusEntry.status, // Status from status_list
+                status_text: statusEntry.status_text // Status text from status_list
+              };
+            });            
 
             dispatch(setContacts({ contacts: contacts }));
 
@@ -117,15 +122,17 @@ const Login = ({ status_list }) => {
 
           if (stanza.is('presence')) {
             let status = '';
+            let status_text = null;
             let fromJid = stanza.attrs.from.split('/')[0]; // Get the JID of the user sending the presence
             if (stanza.attrs && stanza.attrs.type === "unavailable") {
               status = "unavailable";
             } else {
               status = stanza.getChildText('show') || 'chat'; // Extract the status, default to 'chat' if not present
+              status_text = stanza.getChildText('status') || null;
             }
             // Dispatch actions to update contact image and status
-            dispatch(addOrUpdateStatus({ jid: fromJid, status: status }));
-            dispatch(updateContactStatus({ jid: fromJid, status: status }));
+            dispatch(addOrUpdateStatus({ jid: fromJid, status: status, status_text: status_text }));
+            dispatch(updateContactStatus({ jid: fromJid, status: status, status_text: status_text }));
           }
 
           if (stanza.is("message")) {

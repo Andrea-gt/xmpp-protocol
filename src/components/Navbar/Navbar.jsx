@@ -78,7 +78,7 @@ const Navbar = () => {
   const getStatusByJid = (jid) => {
     const status_ = status_list.find(status => status.jid === jid);
     console.log(status_)
-    return status_ ? status_.status : '';
+    return status_ ? status_ : null;
   };
   
   const handleClick = (event) => {
@@ -166,7 +166,7 @@ const Navbar = () => {
           </span>
         </Typography>
         
-        <Tooltip title="More options">
+        <Tooltip title={getStatusByJid(`${user}@alumchat.lol`)?.status_text || ''}>
           <IconButton
             onClick={handleClick}
             size="small"
@@ -179,7 +179,7 @@ const Navbar = () => {
               overlap="circular"
               anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
               variant="dot"
-              status={getStatusByJid(`${user}@alumchat.lol`)} // Pass the status color here
+              status={getStatusByJid(`${user}@alumchat.lol`)?.status || ''} // Pass the status color here
             >
               <Avatar alt="User Avatar" src={getImageByJid(`${user}@alumchat.lol`)} />
             </StyledBadge>

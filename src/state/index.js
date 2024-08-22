@@ -58,12 +58,13 @@ export const chatSlice = createSlice({
          * @param {Object} action - The action containing the contact status update.
          */
         updateContactStatus: (state, action) => {
-            const { jid, status, image } = action.payload;
+            const { jid, status, image, status_text } = action.payload;
             const updatedContacts = state.contacts.map(contact => {
                 if (contact.jid === jid) {
                     return {
                         ...contact,
                         status: status !== undefined ? status : contact.status, // Update status only if provided
+                        status_text: status_text !== undefined ? status_text : contact.status_text, // Update status_text only if provided
                         image: image !== undefined ? image : contact.image    // Update image only if provided
                     };
                 }
@@ -121,13 +122,13 @@ export const chatSlice = createSlice({
          * @param {Object} action - The action containing the status data.
          */
         addOrUpdateStatus: (state, action) => {
-            const { jid, status } = action.payload;
+            const { jid, status, status_text } = action.payload;
             const updatedStatusList = [...state.statusList];
             const statusIndex = updatedStatusList.findIndex(s => s.jid === jid);
             if (statusIndex !== -1) {
-                updatedStatusList[statusIndex] = { jid, status };
+                updatedStatusList[statusIndex] = { jid, status, status_text };
             } else {
-                updatedStatusList.push({ jid, status });
+                updatedStatusList.push({ jid, status, status_text });
             }
             if(updatedStatusList){
             return Object.assign({}, state, { statusList: updatedStatusList });}
