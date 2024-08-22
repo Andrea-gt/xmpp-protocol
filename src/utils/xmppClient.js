@@ -53,3 +53,54 @@ export const connectXMPP = async (username, password) => {
     throw new Error("Could not connect to XMPP server");
   }
 };
+
+/**
+ * Registers a new user with the XMPP server.
+ *
+ * @param {string} full_name - The full name of the user (optional, for display purposes).
+ * @param {string} username - The username for registration.
+ * @param {string} password - The password for registration.
+ * @returns {Promise<boolean>} - Returns true if registration is successful, otherwise throws an error.
+ * @throws {Error} - Throws an error if registration fails.
+ */
+export const registerXMPP = async (full_name, username, password) => {
+  // Create an instance of the XMPP client with the specified service and domain
+  const xmppClient = client({
+    service: "ws://alumchat.lol:7070/ws/", // WebSocket service URL for XMPP server
+    domain: 'alumchat.lol',                // Domain of the XMPP server
+    username: 'andrea-test',
+    password: 'test',
+    resource: 'xpp-client'                 // Resource name of client
+  });
+
+  // Event handler for when an error occurs during the connection
+  xmppClient.on('error', (err) => {
+    console.error('XMPP Connection Error:', err);
+  });
+
+  // Start the XMPP client
+  await xmppClient.start();
+
+  // Prepare the registration IQ stanza
+  const registerRequest = xml(
+    'iq',
+    { type: 'set', id: 'register-request' },
+    xml('query', { xmlns: 'jabber:iq:register' },
+      xml('username', {}, username),
+      xml('password', {}, password),
+      full_name ? xml('name', {}, full_name) : null // Optionally include full name
+    )
+  );
+
+  // Send the registration IQ stanza
+  try {
+    await xmppClient.send(registerRequest);
+    console.log("Registration successful");
+    return true;
+  } catch (error) {
+    console.error("Registration failed:", error);
+    throw new Error("Could not register with XMPP server");
+  } finally {
+    await xmppClient.stop(); // Stop the client after registration attempt
+  }
+};

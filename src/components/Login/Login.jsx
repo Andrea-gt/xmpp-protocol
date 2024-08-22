@@ -45,7 +45,7 @@ const loginSchema = yup.object().shape({
   password: yup.string().required("*Required"), // Password is required
 });
 
-const Login = ({ status_list }) => {
+const Login = ({ status_list, toggleForm }) => {
   const { palette } = useTheme(); // Retrieve theme palette from Material-UI
   const dispatch = useDispatch(); // Get dispatch function from Redux
   const [errorMessage, setErrorMessage] = React.useState(''); // State for managing error messages
@@ -54,7 +54,6 @@ const Login = ({ status_list }) => {
   let images = useSelector((state) => state.images);
   //let status_list = useSelector((state) => state.statusList);
   const messages = useSelector((state) => state.messages);
-  console.log(status_list)
 
   // Handle form submission
   const handleSubmit = async (values) => {
@@ -242,7 +241,7 @@ const Login = ({ status_list }) => {
             validationSchema={loginSchema} // Form validation schema
             onSubmit={handleSubmit} // Handle form submission
           >
-            {({ errors, touched }) => (
+            {({ errors, touched, isValid, dirty }) => (
               <Form>
                 <Field name="username">
                   {({ field }) => (
@@ -293,6 +292,7 @@ const Login = ({ status_list }) => {
                 <Button
                   type="submit"
                   variant="contained"
+                  disabled={!isValid || !dirty}
                   fullWidth
                   sx={{
                     backgroundColor: palette.primary.main,
@@ -307,6 +307,14 @@ const Login = ({ status_list }) => {
             )}
           </Formik>
         </Box>
+        <Typography
+        variant="body2"
+        color="primary"
+        sx={{ cursor: 'pointer', textDecoration: 'underline' }}
+        onClick={toggleForm}
+        >
+          Don't have an account? Register here.
+      </Typography>
       </Box>
     </FlexBetween>
   );
