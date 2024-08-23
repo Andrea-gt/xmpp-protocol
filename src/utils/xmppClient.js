@@ -64,25 +64,27 @@ export const connectXMPP = async (username, password) => {
  * @throws {Error} - Throws an error if registration fails.
  */
 export const registerXMPP = async (full_name, username, password) => {
-  // Create an instance of the XMPP client
-  const xmppClient = client({
-    service: "ws://alumchat.lol:7070/ws/", // WebSocket service URL for XMPP server
-    domain: 'alumchat.lol',                // Domain of the XMPP server
-    sasl: ['SCRAM-SHA-1', 'PLAIN'],        // Supported SASL mechanisms
-    resource: 'xpp-client'                 // Resource name of the client
-  });
+  try {
+    const xmppClient = client({
+      service: "ws://alumchat.lol:7070/ws",
+      resource: "xmpp-client",
+      sasl: ['SCRAM-SHA-1', 'PLAIN'], // Try these mechanisms
+    });
 
-  // Event handler for connection errors
-  xmppClient.on('error', (err) => {
-    console.error('XMPP Connection Error:', err);
-  });
+    return new Promise((resolve, reject) => {
+      // Handle connection errors
+      xmppClient.on("error", (err) => {
+        if (err.code === "ECONERROR") {
+          console.error("Connection error:", err);
+          xmppClient.stop();
+          xmppClient.removeAllListeners();
+          reject(new Error("Error in XMPP Client"));
+        }
+      });
 
-  // Handle the registration process
-  return new Promise((resolve, reject) => {
-    xmppClient.on("open", async (address) => {
-      console.log("Connection established");
-      try {
-        // Prepare the registration IQ stanza
+      // Handle successful connection
+      xmppClient.on("open", () => {
+        // Send the registration IQ stanza
         const registerRequest = xml(
           'iq',
           { type: 'set', id: 'register-request', to: "alumchat.lol" },
@@ -92,42 +94,39 @@ export const registerXMPP = async (full_name, username, password) => {
             full_name ? xml('name', {}, full_name) : null // Optionally include full name
           )
         );
-        // Send the registration IQ stanza
-        await xmppClient.send(registerRequest);
-        // Listen for the response stanza
-        xmppClient.on("stanza", (stanza) => {
-          if (stanza.is("iq") && stanza.getAttr("id") === "register-request") {
-            if (stanza.getAttr("type") === "result") {
-              console.log("Registration successful");
-              resolve({ status: true, message: "Registration successful" });
-            } else if (stanza.getAttr("type") === "error") {
-              const error = stanza.getChild("error");
-              if (error?.getChild("conflict")) {
-                reject({ status: false, message: "Error: Username already taken" });
-                throw new Error("Error: Username already taken");
-              } else {
-                reject({ status: false, message: "Error: Registration failed" });
-                throw new Error("Error: Registration failed");
-              }
+        xmppClient.send(registerRequest);
+      });
+
+      // Handle incoming stanzas
+      xmppClient.on("stanza", async (stanza) => {
+        if (stanza.is("iq") && stanza.getAttr("id") === "register-request") {
+          await xmppClient.stop();
+          xmppClient.removeAllListeners();
+
+          if (stanza.getAttr("type") === "result") {
+            resolve({ status: true, message: "Registration successful" });
+          } else if (stanza.getAttr("type") === "error") {
+            const error = stanza.getChild("error");
+            if (error?.getChild("conflict")) {
+              reject(new Error("Error: Username already taken."));
+            } else {
+              reject(new Error("An error occurred. Please try again!"));
             }
           }
-        });
-      } catch (error) {
-        console.error("Registration failed:", error);
-        reject({ status: false, message: "Could not register with XMPP server" });
-        throw new Error("Could not register with XMPP server");
-      } finally {
-        // Stop the client after the registration attempt
-        await xmppClient.stop();
-        console.log("Connection closed.");
-        xmppClient.removeAllListeners(); // Ensure all listeners are removed
-      }
-    });
+        }
+      });
 
-    // Start the XMPP client
-    xmppClient.start().catch((err) => {
-      console.error("Failed to start XMPP client:", err);
-      reject({ status: false, message: "Failed to start XMPP client" });
+      // Start the XMPP client
+      xmppClient.start().catch((err) => {
+        if (err.message.includes("invalid-mechanism")) {
+          console.log("Ignoring SASL");
+        } else {
+          reject(new Error("Failed to start XMPP client: " + err.message));
+        }
+      });
     });
-  });
+  } catch (error) {
+    console.error("Error:", error);
+    throw error;
+  }
 };

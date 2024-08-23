@@ -31,13 +31,15 @@ const Register = ({ toggleForm }) => {
   const handleSubmit = async (values) => {
     const { full_name, username, password } = values;
     try {
-      // Attempt to register the user
-      await registerXMPP(full_name, username, password);
-      setErrorMessage('');
-      toggleForm() // Return to login component
+      const response = await registerXMPP(full_name, username, password);
+      if (response.status) {
+        setErrorMessage('');
+        toggleForm(); // Return to login component
+      } else {
+        setErrorMessage(response.message || "Registration failed.");
+      }
     } catch (error) {
-      console.log("Register failed:", error);
-      setErrorMessage(error.message); // Set the error message
+      setErrorMessage(error.message || "An unexpected error has occurred.");
     }
   };
 
