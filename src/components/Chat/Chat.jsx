@@ -84,7 +84,7 @@ const ChatBubble = ({ from = 'Unknown', message = '', timestamp = Date.now(), is
           <img
             src={image}
             alt="Sent file"
-            style={{ maxWidth: '100%', borderRadius: '8px', marginBottom: '10px' }}
+            style={{ width: '100%', borderRadius: '8px', marginBottom: '10px' }}
           />
         )}
         <Typography variant="body1">{message}</Typography>
@@ -150,6 +150,7 @@ const Chat = () => {
    */
   const handleUploadFile = async (file, uploadUrl) => {
     try {
+      console.log(file)
       const response = await fetch(uploadUrl, {
         method: 'PUT',
         headers: {
@@ -160,13 +161,17 @@ const Chat = () => {
       });
 
       if (!response.ok) {
+        console.log(response)
         throw new Error(`Failed to upload file: ${response.statusText}`);
       }
       console.log('File uploaded successfully');
+      setFile(null);
+      console.log(file)
     } catch (error) {
       console.error('Error uploading file:', error);
     }
   };
+
 
   /**
    * Handles message submission by sending the message or file via XMPP.
@@ -174,78 +179,86 @@ const Chat = () => {
   const handleSubmit = async () => {
     if (message || file) {
       const timestamp = new Date().toISOString();
-
+      const requestId = `upload-request-${Date.now()}`;  // Generate a unique request ID
+  
       if (file) {
-        // Request file upload slot
-        const requestSlot = xml('iq', { type: 'get', to: 'httpfileupload.alumchat.lol', id: 'upload-request', xmlns: 'jabber:client' }, [
+        // Request file upload slot with the unique request ID
+        const requestSlot = xml('iq', { type: 'get', to: 'httpfileupload.alumchat.lol', id: requestId, xmlns: 'jabber:client' }, [
           xml('request', { xmlns: 'urn:xmpp:http:upload:0', filename: file.name, size: file.size, 'content-type': file.type })
         ]);
-
+  
         try {
           // Send the slot request IQ stanza
           await xmppClient.send(requestSlot);
-          // Handle incoming roster response
+  
+          // Handle incoming stanza response
           xmppClient.on('stanza', async (stanza) => {
-            if (stanza.is("iq") && stanza.attrs.id === 'upload-request') {
+            // Check if the response ID matches the current request
+            if (stanza.is("iq") && stanza.attrs.id === requestId) {
               const slot = stanza.getChild('slot', 'urn:xmpp:http:upload:0');
               const url = slot.getChild('put').attrs.url;
-              
-              console.log(url)
-
+              const url_get = slot.getChild('get').attrs.url;
+  
+              // Upload the file to the provided URL
               await handleUploadFile(file, url);
-
+  
+              // Send the message with the file's URL
               const messageRequest = xml('message', { type: 'chat', to: chat_jid, from: `${username}@alumchat.lol` }, [
-                xml('body', {}, `File sent: ${file.name}`),
+                xml('body', {}, `File sent: ${file.name} -- URL: ${url_get}`),
                 xml('x', { xmlns: 'jabber:x:oob' }, [
-                  xml('url', {}, url),
+                  xml('url', {}, url_get),
                   xml('desc', {}, file.name)
                 ]),
                 xml('request', { xmlns: 'urn:xmpp:receipts' }),
                 xml('markable', { xmlns: 'urn:xmpp:chat-markers:0' })
               ]);
-
+  
               await xmppClient.send(messageRequest);
               console.log('Message with file URL sent');
-
+  
+              // Update the chat with the new message
               const messageObject = {
                 to: chat_jid,
                 from: `${username}@alumchat.lol`,
                 timestamp: timestamp,
-                content: `File sent: ${file.name}`,
-                image: url,
+                content: `File sent: ${file.name} -- URL: ${url_get}`,
+                image: url_get,
               };
-
+  
               dispatch(setMessages({ messages: [...messages, messageObject] }));
             }
           });
         } catch (error) {
           console.error('Failed to handle file upload:', error);
         }
-      } else if (message) {
+      }
+  
+      if (message) {
+        const messageRequest = xml('message', { type: 'chat', to: chat_jid, from: `${username}@alumchat.lol` }, [
+          xml('body', {}, message),
+          xml('request', { xmlns: 'urn:xmpp:receipts' }),
+          xml('markable', { xmlns: 'urn:xmpp:chat-markers:0' })
+        ]);
+  
+        await xmppClient.send(messageRequest);
+        console.log('Message sent');
+  
+        // Update the chat with the new message
         const messageObject = {
           to: chat_jid,
           from: `${username}@alumchat.lol`,
           timestamp: timestamp,
           content: message,
-          image: null
         };
-
-        const messageRequest = xml('message', { type: 'chat', to: chat_jid, from: `${username}@alumchat.lol` }, [
-          xml('body', {}, message),
-        ]);
-
-        try {
-          await xmppClient.send(messageRequest);
-          console.log('Message sent');
-          dispatch(setMessages({ messages: [...messages, messageObject] }));
-        } catch (error) {
-          console.error('Failed to send message request:', error);
-        }
+  
+        dispatch(setMessages({ messages: [...messages, messageObject] }));
       }
-      setFile(null);
+  
+      // Reset message and file inputs
       setMessage('');
+      setFile(null);
     }
-  };
+  };  
 
   return (
     <Box
