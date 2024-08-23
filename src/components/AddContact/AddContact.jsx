@@ -68,16 +68,17 @@ const AddContact = ({ open, onClose }) => {
       ])
     ]);
 
-    // Create an XMPP presence stanza to request adding a contact
-    const presenceRequest = xml('presence', { type: 'subscribe', to: `${values.username}@alumchat.lol` });
-
+    // Create an XMPP presence stanzas to request adding a contact
+    const subscribeRequest = xml('presence', { type: 'subscribe', to: `${values.username}@alumchat.lol` });
+    const subscribedResponse = xml('presence', { type: 'subscribed', to: `${values.username}@alumchat.lol` });
     // Create an XMPP IQ stanza to request the contact list
     const rosterRequest = xml('iq', { type: 'get', id: 'roster-request' }, [xml('query', { xmlns: 'jabber:iq:roster' })]);
 
     try {
       // Send the requests using the XMPP client
       await xmppClient.send(addRequest);
-      await xmppClient.send(presenceRequest);
+      await xmppClient.send(subscribeRequest);
+      await xmppClient.send(subscribedResponse);
       console.log('Contact added successfully'); // Log success message
 
       try {
