@@ -64,43 +64,70 @@ export const connectXMPP = async (username, password) => {
  * @throws {Error} - Throws an error if registration fails.
  */
 export const registerXMPP = async (full_name, username, password) => {
-  // Create an instance of the XMPP client with the specified service and domain
+  // Create an instance of the XMPP client
   const xmppClient = client({
     service: "ws://alumchat.lol:7070/ws/", // WebSocket service URL for XMPP server
     domain: 'alumchat.lol',                // Domain of the XMPP server
-    username: 'andrea-test',
-    password: 'test',
-    resource: 'xpp-client'                 // Resource name of client
+    sasl: ['SCRAM-SHA-1', 'PLAIN'],        // Supported SASL mechanisms
+    resource: 'xpp-client'                 // Resource name of the client
   });
 
-  // Event handler for when an error occurs during the connection
+  // Event handler for connection errors
   xmppClient.on('error', (err) => {
     console.error('XMPP Connection Error:', err);
   });
 
-  // Start the XMPP client
-  await xmppClient.start();
+  // Handle the registration process
+  return new Promise((resolve, reject) => {
+    xmppClient.on("open", async (address) => {
+      console.log("Connection established");
+      try {
+        // Prepare the registration IQ stanza
+        const registerRequest = xml(
+          'iq',
+          { type: 'set', id: 'register-request', to: "alumchat.lol" },
+          xml('query', { xmlns: 'jabber:iq:register' },
+            xml('username', {}, username),
+            xml('password', {}, password),
+            full_name ? xml('name', {}, full_name) : null // Optionally include full name
+          )
+        );
+        // Send the registration IQ stanza
+        await xmppClient.send(registerRequest);
+        // Listen for the response stanza
+        xmppClient.on("stanza", (stanza) => {
+          if (stanza.is("iq") && stanza.getAttr("id") === "register-request") {
+            if (stanza.getAttr("type") === "result") {
+              console.log("Registration successful");
+              resolve({ status: true, message: "Registration successful" });
+            } else if (stanza.getAttr("type") === "error") {
+              const error = stanza.getChild("error");
+              if (error?.getChild("conflict")) {
+                reject({ status: false, message: "Error: Username already taken" });
+                throw new Error("Error: Username already taken");
+              } else {
+                reject({ status: false, message: "Error: Registration failed" });
+                throw new Error("Error: Registration failed");
+              }
+            }
+          }
+        });
+      } catch (error) {
+        console.error("Registration failed:", error);
+        reject({ status: false, message: "Could not register with XMPP server" });
+        throw new Error("Could not register with XMPP server");
+      } finally {
+        // Stop the client after the registration attempt
+        await xmppClient.stop();
+        console.log("Connection closed.");
+        xmppClient.removeAllListeners(); // Ensure all listeners are removed
+      }
+    });
 
-  // Prepare the registration IQ stanza
-  const registerRequest = xml(
-    'iq',
-    { type: 'set', id: 'register-request' },
-    xml('query', { xmlns: 'jabber:iq:register' },
-      xml('username', {}, username),
-      xml('password', {}, password),
-      full_name ? xml('name', {}, full_name) : null // Optionally include full name
-    )
-  );
-
-  // Send the registration IQ stanza
-  try {
-    await xmppClient.send(registerRequest);
-    console.log("Registration successful");
-    return true;
-  } catch (error) {
-    console.error("Registration failed:", error);
-    throw new Error("Could not register with XMPP server");
-  } finally {
-    await xmppClient.stop(); // Stop the client after registration attempt
-  }
+    // Start the XMPP client
+    xmppClient.start().catch((err) => {
+      console.error("Failed to start XMPP client:", err);
+      reject({ status: false, message: "Failed to start XMPP client" });
+    });
+  });
 };

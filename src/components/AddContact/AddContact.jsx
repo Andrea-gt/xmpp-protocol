@@ -122,12 +122,12 @@ const AddContact = ({ open, onClose }) => {
     >
       <Box sx={style}>
         <Typography variant="h6" mb={2}>
-          Add New Contact
+          Add New Contact or Group
         </Typography>
 
         <Box sx={{ borderRadius: '8px', marginTop: '16px' }}>
           <Typography variant="body1" sx={{ fontWeight: '400' }}>
-            To proceed, kindly provide the username of the contact you'd like to add to your list.
+            To proceed, kindly provide the username of the contact or group you'd like to add to your list.
           </Typography>
         </Box>
         <Formik
@@ -173,7 +173,7 @@ const AddContact = ({ open, onClose }) => {
                   color="primary"
                   disabled={isSubmitting || !isValid} // Disable button if form is submitting or invalid
                 >
-                  Add Contact
+                  Add Contact or Group
                 </Button>
                 <Button
                   variant="outlined"

@@ -65,11 +65,6 @@ const Navbar = () => {
   const images = useSelector((state) => state.images);
   const status_list = useSelector((state) => state.statusList);
 
-
-  // Determine status
-  const userStatus = xmppClient ? 'connected' : 'offline'; // Update this logic as needed
-  const badgeColor = statusColors[userStatus];
-
   const getImageByJid = (jid) => {
     const image = images.find(img => img.jid === jid);
     return image ? image.image : '';

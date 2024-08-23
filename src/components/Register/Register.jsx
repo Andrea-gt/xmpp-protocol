@@ -36,8 +36,8 @@ const Register = ({ toggleForm }) => {
       setErrorMessage('');
       toggleForm() // Return to login component
     } catch (error) {
-      console.error("Register failed:", error);
-      setErrorMessage("Register failed. Please try again later."); // Set the error message
+      console.log("Register failed:", error);
+      setErrorMessage(error.message); // Set the error message
     }
   };
 

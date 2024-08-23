@@ -104,7 +104,6 @@ const EditStatus = ({ open, onClose }) => {
                   ))}
                 </Field>
               </Box>
-
               <Box sx={{ marginBottom: '16px' }}>
                 <Field
                   as={TextField}
@@ -117,7 +116,6 @@ const EditStatus = ({ open, onClose }) => {
                   helperText={touched.statusText && errors.statusText}
                 />
               </Box>
-
               <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
                 <Button
                   variant="contained"
