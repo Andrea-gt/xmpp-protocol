@@ -89,6 +89,7 @@ const ChatBubble = ({ from = 'Unknown', message = '', timestamp = Date.now(), is
         )}
         <Typography variant="body1">{message}</Typography>
         <Typography variant="caption" align="right" sx={{ display: 'block', marginTop: '5px' }}>
+          {new Date(timestamp).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}{' | '}
           {new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
         </Typography>
       </Box>
@@ -111,7 +112,9 @@ const Chat = () => {
   const messages = useSelector((state) => state.messages); // Get all messages from Redux store
   const chat_jid = useSelector((state) => state.chat_jid); // Get the chat JID from Redux store
   const { xmppClient } = useXMPP(); // Get the XMPP client from context
-
+  const isGroupchat = chat_jid.includes("conference")
+  const presenceStanza = xml('presence', { to: `${chat_jid}/${username}@alumchat.lol`});
+  
   /**
    * Filters messages relevant to the current chat between the user and the chat_jid.
    * Updates the filteredMessages state when messages, username, or chat_jid change.
@@ -203,7 +206,8 @@ const Chat = () => {
               await handleUploadFile(file, url);
   
               // Send the message with the file's URL
-              const messageRequest = xml('message', { type: 'chat', to: chat_jid, from: `${username}@alumchat.lol` }, [
+              let chat_type =  isGroupchat ? 'groupchat' : 'chat'
+              const messageRequest = xml('message', { type: chat_type, to: chat_jid, from: `${username}@alumchat.lol` }, [
                 xml('body', {}, `File sent: ${file.name} -- URL: ${url_get}`),
                 xml('x', { xmlns: 'jabber:x:oob' }, [
                   xml('url', {}, url_get),
@@ -214,6 +218,9 @@ const Chat = () => {
               ]);
   
               await xmppClient.send(messageRequest);
+              if(isGroupchat) {
+                await xmppClient.send(presenceStanza)
+              }
               console.log('Message with file URL sent');
   
               // Update the chat with the new message
@@ -223,9 +230,11 @@ const Chat = () => {
                 timestamp: timestamp,
                 content: `File sent: ${file.name} -- URL: ${url_get}`,
                 image: url_get,
+                complete_from: `${username}@alumchat.lol`
               };
-  
-              dispatch(setMessages({ messages: [...messages, messageObject] }));
+              if(!isGroupchat) {
+                dispatch(setMessages({ messages: [...messages, messageObject] }));
+              }
             }
           });
         } catch (error) {
@@ -234,12 +243,19 @@ const Chat = () => {
       }
   
       if (message) {
-        const messageRequest = xml('message', { type: 'chat', to: chat_jid, from: `${username}@alumchat.lol` }, [
+        console.log(chat_jid)
+        let chat_type =  isGroupchat ? 'groupchat' : 'chat'
+        console.log(chat_type)
+        const messageRequest = xml('message', { type: chat_type, to: chat_jid, from: `${username}@alumchat.lol` }, [
           xml('body', {}, message),
           xml('request', { xmlns: 'urn:xmpp:receipts' }),
           xml('markable', { xmlns: 'urn:xmpp:chat-markers:0' })
         ]);
   
+        if(isGroupchat){
+          await xmppClient.send(presenceStanza)
+        }
+
         await xmppClient.send(messageRequest);
         console.log('Message sent');
   
@@ -249,9 +265,12 @@ const Chat = () => {
           from: `${username}@alumchat.lol`,
           timestamp: timestamp,
           content: message,
+          complete_from: `${username}@alumchat.lol`
         };
-  
-        dispatch(setMessages({ messages: [...messages, messageObject] }));
+
+        if(!isGroupchat) {
+          dispatch(setMessages({ messages: [...messages, messageObject] }));
+        }
       }
   
       // Reset message and file inputs
@@ -289,10 +308,11 @@ const Chat = () => {
           filteredMessages.map((msg, i) => (
             <ChatBubble
               key={i}
-              from={msg.from.split('@')[0]}
+              from={chat_jid.includes("conference") ? (msg.complete_from?.split('/')[1]?.split('@')[0] || msg.from?.split('@')[0]) : (msg.from?.split('@')[0] || '')}
               message={msg.content}
               timestamp={msg.timestamp}
-              isCurrentUser={msg.from.split('@')[0] === username}
+              isCurrentUser={(chat_jid.includes("conference") ? (msg.complete_from?.split('/')[1]?.split('@')[0] || msg.from?.split('@')[0])  
+                : msg.from.split('@')[0]) === username}
               image={msg.image}
             />
           ))

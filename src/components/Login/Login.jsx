@@ -70,6 +70,9 @@ const Login = ({ status_list, toggleForm }) => {
         xml('query', { xmlns: 'jabber:iq:roster' })
       ]);
 
+      // Create IQ stanza to request list of rooms the user is in
+      const requestRooms = xml('iq', { type: 'get', id: 'rooms-request' }, xml('query', 'jabber:iq:private', xml('storage', 'storage:bookmarks')));
+
       // Create an XMPP IQ stanza to request the chat list
       const chatRequest = xml('iq', { type: 'set', id: 'mamReq' }, xml('query', { xmlns: 'urn:xmpp:mam:2', queryid: 'f27' }));
 
@@ -164,23 +167,29 @@ const Login = ({ status_list, toggleForm }) => {
                 from: forwardedMessage.getAttr('from').split('/')[0],
                 timestamp: delay.getAttr('stamp'),
                 content: forwardedMessage.getChild('body').getText(),
-                image: image
+                image: image,
+                complete_from: forwardedMessage.getAttr('from')
               };
               //console.log(message)
             } else if (stanza.getChild('body')) {
+              console.log('TEST', stanza)
               let image = null
               // Case when only 'body' is present
               const body = stanza.getChild('body');
               if(stanza.getChild('x')){
                 image = stanza.getChild('x').getChildText('url')
               }
+              console.log(stanza.attrs.from)
               message = {
                 to: stanza.attrs.to,  // No 'to' attribute available
                 from: stanza.attrs.from.split('/')[0], // No 'from' attribute available
                 timestamp: new Date().toISOString(), // No timestamp available
                 content: body.getText(),
-                image: image
+                image: image,
+                complete_from: stanza.attrs.from
               };
+
+              console.log(message.complete_from.split('/')[1]?.split('@')[0])
 
               // Set Snackbar message and open it
               dispatch(setNotification({ notification: `New message from ${message.from}`, type: 'message', from: message.from }));

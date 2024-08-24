@@ -103,8 +103,11 @@ const ContactList = ({ statusList, images }) => {
    * @param {Object} user - The user object for the clicked contact
    */
   const handleUserClick = (user, users) => {
-    dispatch(setChat({ chat_jid: `${user.username}@alumchat.lol` }));
-  };
+    // Check if the JID contains "conference" to determine if it's a group chat
+    const isGroupChat = user.jid.includes("conference");
+    // Dispatch the chat action with the appropriate JID format
+    dispatch(setChat({ chat_jid: isGroupChat ? `${user.jid}` : `${user.username}@alumchat.lol` }));
+  };  
 
   return (
     <Box
@@ -150,7 +153,7 @@ const ContactList = ({ statusList, images }) => {
           {users.map((user) => {
             return (
               <Box
-              key={user.username}
+              key={user.jid}
               display="flex"
               flexDirection="row"
               height="75px"

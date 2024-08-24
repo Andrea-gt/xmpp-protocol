@@ -1,15 +1,5 @@
-/**
- * AddContact Component
- * 
- * This component renders a modal that allows users to add a new contact by entering a username. 
- * It uses Formik for form handling and validation with Yup, Material-UI for styling, 
- * and XMPP client context for sending the contact addition request.
- * 
- * Documentation Generated with ChatGPT
- */
-
-import React from 'react';
-import { Box, Typography, Button, Modal, useTheme, TextField, InputAdornment, Alert } from '@mui/material';
+import React, { useState, useRef } from 'react';
+import { Box, Typography, Button, Modal, useTheme, TextField, InputAdornment, Alert, Radio, RadioGroup, FormControlLabel, FormControl, FormLabel } from '@mui/material';
 import AccountCircleOutlinedIcon from '@mui/icons-material/AccountCircleOutlined';
 import { Formik, Form, Field } from 'formik';
 import * as yup from 'yup'; // Import Yup for form validation
@@ -18,98 +8,199 @@ import { xml } from '@xmpp/client';
 import { setContacts } from '../../state';
 import { useDispatch, useSelector } from 'react-redux';
 
+// Define validation schemas for different action types
+const contactValidationSchema = yup.object({
+  username: yup.string()
+    .required('Username is required') // Ensure username is provided
+});
+
+const groupValidationSchema = yup.object({
+  username: yup.string()
+    .required('Group name is required') // Ensure group name is provided
+});
+
+// Define initial values for each form type
+const contactInitialValues = { username: '' };
+const groupInitialValues = { username: '' };
+
 const AddContact = ({ open, onClose }) => {
   const { palette } = useTheme(); // Get theme palette from Material-UI
   const { xmppClient } = useXMPP(); // Access XMPP client from context
-  const images = useSelector((state) => state.images);
-  const status_list = useSelector((state) => state.statusList);
+  const images = useSelector((state) => state.images); // Access images from Redux store
+  const statusList = useSelector((state) => state.statusList); // Access status list from Redux store
   const dispatch = useDispatch(); // Get dispatch function from Redux
-  
+
+  const [actionType, setActionType] = useState('contact'); // State to manage action type (contact or group)
+  const [initialValues, setInitialValues] = useState(contactInitialValues); // State for initial form values
+  const formikRef = useRef(); // Reference to the Formik instance
+
+  // Function to get image URL by JID
   const getImageByJid = (jid) => {
-    console.log('Looking for image with JID:', jid);
     const image = images.find(img => img.jid === jid);
-    console.log('Found image:', image);
-    return image ? image.image : ''; // Return image URL or empty string if not found
+    return image ? image.image : '';
   };
   
+  // Function to get status by JID
   const getStatusByJid = (jid) => {
-    console.log('Looking for status with JID:', jid);
-    console.log(status_list)
-    const status = status_list.find(status => status.jid === jid);
-    console.log('Found status:', status);
-    return status ? status.status : ''; // Return status or empty string if not found
+    const status = statusList.find(status => status.jid === jid);
+    return status ? status.status : '';
   };
 
   // Styles for the modal
-  const style = {
+  const modalStyle = {
     position: 'absolute',
     top: '50%',
     left: '50%',
     transform: 'translate(-50%, -50%)',
     backgroundColor: palette.grey[100], // Background color from theme palette
     boxShadow: '0px 4px 20px rgba(0, 0, 0, 0.2)', // Shadow effect for modal
-    p: '20px',
+    padding: '20px',
     width: '400px',
   };
 
-  // Validation schema for the form using Yup
-  const validationSchema = yup.object({
-    username: yup.string()
-      .required('Username is required') // Ensure username is provided
-  });
   // Handle form submission
   const handleSubmit = async (values, { setSubmitting }) => {
-    console.log('Submitted values:', values);
-
-    // Create an XMPP IQ stanza to request adding a contact
-    const addRequest = xml('iq', { type: 'set', id: 'add-user' }, [
-      xml('query', { xmlns: 'jabber:iq:roster' }, [
-        xml('item', { jid: `${values.username}@alumchat.lol`, suscription: "both" }) // Specify the JID of the contact to add
-      ])
-    ]);
-
-    // Create an XMPP presence stanzas to request adding a contact
-    const subscribeRequest = xml('presence', { type: 'subscribe', to: `${values.username}@alumchat.lol` });
-    const subscribedResponse = xml('presence', { type: 'subscribed', to: `${values.username}@alumchat.lol` });
-    // Create an XMPP IQ stanza to request the contact list
-    const rosterRequest = xml('iq', { type: 'get', id: 'roster-request' }, [xml('query', { xmlns: 'jabber:iq:roster' })]);
-
+    let request;
+    let contacts = [];
+    let rooms = [];
+  
     try {
-      // Send the requests using the XMPP client
-      await xmppClient.send(addRequest);
-      await xmppClient.send(subscribeRequest);
-      await xmppClient.send(subscribedResponse);
-      console.log('Contact added successfully'); // Log success message
-
-      try {
-        // Send the roster request IQ stanza
-        await xmppClient.send(rosterRequest);
-        // Handle incoming roster response
-        xmppClient.on('stanza', (stanza) => {
-          console.log(stanza)
-          if (stanza.is("iq") && stanza.attrs.id === 'roster-request') {
+      if (actionType === 'contact') {
+        // Create an XMPP IQ stanza to request adding a contact
+        request = xml('iq', { type: 'set', id: 'add-user' }, [
+          xml('query', { xmlns: 'jabber:iq:roster' }, [
+            xml('item', { jid: `${values.username}@alumchat.lol`, subscription: 'both' })
+          ])
+        ]);
+  
+        // Create presence stanzas for subscription request
+        const subscribeRequest = xml('presence', { type: 'subscribe', to: `${values.username}@alumchat.lol` });
+        const subscribedResponse = xml('presence', { type: 'subscribed', to: `${values.username}@alumchat.lol` });
+  
+        await xmppClient.send(request);
+        await xmppClient.send(subscribeRequest);
+        await xmppClient.send(subscribedResponse);
+  
+        console.log('Contact added successfully');
+      } else if (actionType === 'group') {
+        console.log(values);
+        // Create an XMPP IQ stanza to create a group chat
+        request = xml('iq', { type: 'set', id: 'create-groupchat' }, [
+          xml('query', { xmlns: 'http://jabber.org/protocol/muc#owner' }, [
+            xml('x', { xmlns: 'jabber:x:data', type: 'submit' }, [
+              xml('field', { var: 'FORM_TYPE', type: 'hidden' }, [
+                xml('value', 'http://jabber.org/protocol/muc#roomconfig')
+              ]),
+              xml('field', { var: 'muc#roomconfig_roomname' }, [
+                xml('value', values.username) // Use username as room name
+              ])
+            ])
+          ])
+        ]);
+  
+        await xmppClient.send(request);
+        console.log('Group chat created successfully');
+      }
+  
+      // Request the contact list
+      const rosterRequest = xml('iq', { type: 'get', id: 'roster-request' }, [xml('query', { xmlns: 'jabber:iq:roster' })]);
+      // Create IQ stanza to request list of rooms the user is in
+      const requestRooms = xml('iq', { type: 'get', id: 'rooms-request' }, xml('query', 'jabber:iq:private', xml('storage', 'storage:bookmarks')));
+      // Send the requests to the server
+      await xmppClient.send(rosterRequest);
+      await xmppClient.send(requestRooms);
+  
+      // Function to handle stanza responses
+      const handleStanza = (stanza) => {
+        if (stanza.is("iq")) {
+          if (stanza.attrs.id === 'roster-request') {
             const query = stanza.getChild('query');
             const items = query.getChildren('item');
-            // Transform XML data into JSON format
-            const contacts = items.map(item => ({
-              jid: item.attrs.jid, // JID of the contact
-              name: item.attrs.name || 'No name', // Contact's name (default to 'No name' if not present)
-              username: item.attrs.jid.split('@')[0], // Extract username from JID
-              image: getImageByJid(item.attrs.jid), // Placeholder for image URL (requires additional handling if images are provided)
-              status: getStatusByJid(item.attrs.jid) // Contact's status (default to empty string if not present)
+            contacts = items.map(item => ({
+              jid: item.attrs.jid,
+              name: item.attrs.name || 'No name',
+              username: item.attrs.jid.split('@')[0],
+              image: getImageByJid(item.attrs.jid),
+              status: getStatusByJid(item.attrs.jid),
             }));
-            dispatch(setContacts({ contacts: contacts }));
+          } else if (stanza.attrs.id === 'rooms-request') {
+            console.log(stanza);
+            const items = stanza.getChild('query').getChild('storage').getChildren('conference');
+            rooms = items.map(item => ({
+              jid: item.attrs.jid,
+              name: "", // Placeholder for group name
+            }));
+            // Request details for each group chat
+            rooms.forEach(chat => {
+              xmppClient.send(xml('iq', { type: 'get', id: `gcinformation-request`, to: chat.jid },
+                xml('query', 'http://jabber.org/protocol/disco#info')
+              ));
+            });
+          } else if (stanza.attrs.id.startsWith('gcinformation-request')) {
+            console.log(stanza);
+            const jid = stanza.attrs.from;
+            const room = rooms.find(c => c.jid === jid);
+            if (room) {
+              const name_ = stanza.getChild('query').getChild('identity').attrs.name;
+              room.name = name_ ? name_ : 'Groupchat';
+            }
           }
-        });
-      } catch (error) {
-        console.error("Error getting contact list:", error);
-      }
+        }
+      };
+  
+      // Register the stanza handler
+      xmppClient.on('stanza', handleStanza);
+  
+      // Wait until all room details are received
+      await new Promise((resolve) => {
+        const interval = setInterval(() => {
+          if (rooms.every(room => room.name)) {
+            clearInterval(interval);
+            resolve();
+          }
+        }, 100); // Check every 100ms
+      });
+  
+      // Unregister the stanza handler
+      xmppClient.off('stanza', handleStanza);
+  
+      // Combine contacts and group chats
+      const combinedList = [
+        ...contacts,
+        ...rooms.map(room => ({
+          jid: room.jid,
+          name: room.name,
+          username: null, // Set username to null for groups
+          image: null, // Set image to null for groups
+          status: null, // Set status to null for groups
+        }))
+      ];
+  
+      // Dispatch the combined list as contacts
+      dispatch(setContacts({ contacts: combinedList }));
       onClose(); // Close the modal after successful submission
+  
     } catch (error) {
-      console.error('Failed to add contact:', error); // Log error if contact addition fails
-      alert('Failed to add new contact. Please try again later.'); // Make an alert in case of error
+      console.error(`Failed to ${actionType === 'contact' ? 'add contact' : 'create group chat'}:`, error);
+      alert(`Failed to ${actionType === 'contact' ? 'add new contact' : 'create group chat'}. Please try again later.`);
     } finally {
       setSubmitting(false); // Set submitting to false after handling the submission
+    }
+  };  
+
+  // Handle action type change and update form values
+  const handleActionTypeChange = (event) => {
+    const newActionType = event.target.value;
+    setActionType(newActionType);
+
+    if (newActionType === 'contact') {
+      setInitialValues(contactInitialValues);
+    } else if (newActionType === 'group') {
+      setInitialValues(groupInitialValues);
+    }
+
+    if (formikRef.current) {
+      formikRef.current.resetForm();
     }
   };
 
@@ -120,29 +211,44 @@ const AddContact = ({ open, onClose }) => {
       aria-labelledby="add-contact-modal"
       aria-describedby="modal-to-add-new-contact"
     >
-      <Box sx={style}>
+      <Box sx={modalStyle}>
         <Typography variant="h6" mb={2}>
           Add New Contact or Group
         </Typography>
 
         <Box sx={{ borderRadius: '8px', marginTop: '16px' }}>
           <Typography variant="body1" sx={{ fontWeight: '400' }}>
-            To proceed, kindly provide the username of the contact or group you'd like to add to your list.
+            To proceed, kindly provide the username of the contact or name of group you'd like to add to your list.
           </Typography>
         </Box>
+
+        <FormControl component="fieldset" sx={{ mt: 2 }}>
+          <FormLabel component="legend">Action Type</FormLabel>
+          <RadioGroup
+            aria-label="action-type"
+            name="actionType"
+            value={actionType}
+            onChange={handleActionTypeChange} // Update action type and initial values on change
+          >
+            <FormControlLabel value="contact" control={<Radio />} label="Add Contact" />
+            <FormControlLabel value="group" control={<Radio />} label="Create Group Chat" />
+          </RadioGroup>
+        </FormControl>
+
         <Formik
-          initialValues={{ username: '' }} // Initial form values
-          validationSchema={validationSchema} // Validation schema for the form
+          innerRef={formikRef} // Reference to Formik instance
+          initialValues={initialValues} // Initial values based on action type
+          validationSchema={actionType === 'contact' ? contactValidationSchema : groupValidationSchema} // Validation schema based on action type
           onSubmit={handleSubmit} // Form submission handler
         >
           {({ errors, touched, isSubmitting, isValid }) => (
             <Form>
-              <Field name="username">
+              <Field name='username'>
                 {({ field, meta }) => (
                   <Box mb={2}>
                     <TextField
                       {...field}
-                      label="Username"
+                      label={ actionType === 'contact' ? 'Username' : 'Group Name' }
                       variant="outlined"
                       fullWidth
                       margin="normal"
@@ -171,17 +277,9 @@ const AddContact = ({ open, onClose }) => {
                   type="submit"
                   variant="contained"
                   color="primary"
-                  disabled={isSubmitting || !isValid} // Disable button if form is submitting or invalid
+                  disabled={isSubmitting || !isValid} // Disable button while submitting or if form is invalid
                 >
-                  Add Contact or Group
-                </Button>
-                <Button
-                  variant="outlined"
-                  color="primary"
-                  onClick={onClose}
-                  sx={{ ml: 1 }}
-                >
-                  Cancel
+                  {actionType === 'contact' ? 'Add Contact' : 'Create Group Chat'}
                 </Button>
               </Box>
             </Form>
