@@ -112,9 +112,9 @@ const Chat = () => {
   const messages = useSelector((state) => state.messages); // Get all messages from Redux store
   const chat_jid = useSelector((state) => state.chat_jid); // Get the chat JID from Redux store
   const { xmppClient } = useXMPP(); // Get the XMPP client from context
-  const isGroupchat = chat_jid.includes("conference")
+  const isGroupchat = chat_jid?.includes("conference")
   const presenceStanza = xml('presence', { to: `${chat_jid}/${username}@alumchat.lol`});
-  
+
   /**
    * Filters messages relevant to the current chat between the user and the chat_jid.
    * Updates the filteredMessages state when messages, username, or chat_jid change.

@@ -46,6 +46,9 @@ const loginSchema = yup.object().shape({
   password: yup.string().required("*Required"), // Password is required
 });
 
+// Sleep function using Promise
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
 const Login = ({ status_list, toggleForm }) => {
   const { palette } = useTheme(); // Retrieve theme palette from Material-UI
   const dispatch = useDispatch(); // Get dispatch function from Redux
@@ -59,6 +62,8 @@ const Login = ({ status_list, toggleForm }) => {
   // Handle form submission
   const handleSubmit = async (values) => {
     const { username, password } = values;
+    let rooms = []
+
     try {
       // Attempt to connect to XMPP server
       const connection = await connectXMPP(username, password);
@@ -69,13 +74,10 @@ const Login = ({ status_list, toggleForm }) => {
       const rosterRequest = xml('iq', { type: 'get', id: 'roster-request' }, [
         xml('query', { xmlns: 'jabber:iq:roster' })
       ]);
-
       // Create IQ stanza to request list of rooms the user is in
       const requestRooms = xml('iq', { type: 'get', id: 'rooms-request' }, xml('query', 'jabber:iq:private', xml('storage', 'storage:bookmarks')));
-
       // Create an XMPP IQ stanza to request the chat list
       const chatRequest = xml('iq', { type: 'set', id: 'mamReq' }, xml('query', { xmlns: 'urn:xmpp:mam:2', queryid: 'f27' }));
-
       // Create an XMPP IQ stanza to request the user pfp.
       const pfpRequest = xml('iq', { type: 'get', id: `userpfp-request`, to: `${username}@alumchat.lol` },
         xml('pubsub', { xmlns: 'http://jabber.org/protocol/pubsub' },
@@ -85,18 +87,45 @@ const Login = ({ status_list, toggleForm }) => {
 
       try {
         // Send the roster request IQ stanza
-        await connection.send(rosterRequest);
+        await connection.send(requestRooms);
         // Send the chat request IQ stanza
         await connection.send(chatRequest);
         // Send the chat request IQ stanza
         await connection.send(pfpRequest);
+        // Send the roster request IQ stanza
+        await connection.send(rosterRequest);
 
         // Handle incoming roster response
         connection.on('stanza', (stanza) => {
+          if (stanza.is("iq") && stanza.getAttr("id") === 'rooms-request') {
+            console.log(stanza);
+            const items = stanza.getChild('query').getChild('storage').getChildren('conference');
+            rooms = items.map(item => ({
+              jid: item.attrs.jid,
+              name: "Groupchat", // Placeholder for group name
+            }));
+            // Request details for each group chat
+            rooms.forEach(chat => {
+              connection.send(xml('iq', { type: 'get', id: `gcinformation-request`, to: chat.jid },
+                xml('query', 'http://jabber.org/protocol/disco#info')
+              ));
+            });
+          }
+  
+          if (stanza.is("iq") && stanza.getAttr("id") === 'gcinformation-request') {
+              console.log(stanza);
+              const jid = stanza.attrs.from;
+              const room = rooms.find(c => c.jid === jid);
+              if (room) {
+                const name_ = stanza.getChild('query').getChild('identity').attrs.name;
+                room.name = name_ ? name_ : 'Groupchat';
+              }
+          }
+
           if (stanza.is("iq") && stanza.attrs.id === 'roster-request') {
+            console.log('roster')
             const query = stanza.getChild('query');
             const items = query.getChildren('item');
-                
             // Transform XML data into JSON format
             const contacts = items.map(item => {
               // Find the status entry for the current item
@@ -109,9 +138,23 @@ const Login = ({ status_list, toggleForm }) => {
                 status: statusEntry.status, // Status from status_list
                 status_text: statusEntry.status_text // Status text from status_list
               };
-            });            
+            }); 
 
-            dispatch(setContacts({ contacts: contacts }));
+            // Combine contacts and group chats
+            const combinedList = [
+              ...contacts,
+              ...rooms.map(room => ({
+                jid: room.jid,
+                name: room.name,
+                username: null, // Set username to null for groups
+                image: null, // Set image to null for groups
+                status: null, // Set status to null for groups
+              }))
+            ];
+            
+            console.log(rooms)
+            // Dispatch the combined list as contacts
+            dispatch(setContacts({ contacts: combinedList }));
 
             // Fetch avatars for each contact
             contacts.forEach((contact, index) => {
