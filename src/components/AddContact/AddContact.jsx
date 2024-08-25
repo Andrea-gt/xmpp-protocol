@@ -62,6 +62,7 @@ const AddContact = ({ open, onClose }) => {
   const handleSubmit = async (values, { setSubmitting }) => {
     let contacts = [];
     let combinedList = []; // This will include both contacts and groups
+    let rooms = [];
   
     try {
       // Helper function to send stanzas and wait for responses
@@ -75,7 +76,7 @@ const AddContact = ({ open, onClose }) => {
             }
           };
           xmppClient.on('stanza', handleStanza);
-          xmppClient.send(request).catch(reject);
+          xmppClient.sendReceive(request).catch(reject);
         });
       };
   
@@ -164,10 +165,8 @@ const AddContact = ({ open, onClose }) => {
       );
 
       const roomsResponse = await sendRequest(roomsRequest);
-      console.log(roomsResponse)
   
       // Extract rooms from the response
-      let rooms = [];
       const roomItems = roomsResponse.getChild('query').getChild('storage').getChildren('conference');
       rooms = roomItems.map(item => ({
         jid: item.attrs.jid,
@@ -176,14 +175,19 @@ const AddContact = ({ open, onClose }) => {
   
       // Request details for each group chat and update room names
       await Promise.all(rooms.map(async (room) => {
-        const roomInfoRequest = xml('iq', { type: 'get', id: `gcinformation-request`, to: room.jid },
+        const roomInfoRequest = xml('iq', { type: 'get', id: `gcinformation-request${room.jid}`, to: room.jid },
           xml('query', 'http://jabber.org/protocol/disco#info')
         );
         const roomInfoResponse = await sendRequest(roomInfoRequest);
-        const name_ = roomInfoResponse.getChild('query').getChild('identity').attrs.name;
+        console.log(roomInfoResponse)
+        const name_ = roomInfoResponse.getChild('query')?.getChild('identity')?.attrs.name ?? null;
         room.name = name_ || 'Groupchat';
       }));
   
+      // Create the conferencesList array for adding bookmarks
+      const conferencesList = rooms
+        .map(group => xml('conference', { autojoin: 'true', jid: group.jid }));
+
       // Combine contacts and rooms into a single list
       combinedList = [
         ...contacts,
@@ -195,17 +199,17 @@ const AddContact = ({ open, onClose }) => {
           status: null, // Set status to null for groups
         }))
       ];
-  
-      // Create the conferencesList array for adding bookmarks
-      const conferencesList = rooms
-        .map(group => xml('conference', { autojoin: 'true', jid: group.jid }));
-  
-      console.log(combinedList)
-      console.log(rooms)
-      console.log(conferencesList, "LISTA DE CONFERENCIAS")
 
       // Add the current user's conference room
       if(actionType === 'group'){
+        combinedList.push({ 
+          jid: `${values.username}@conference.alumchat.lol`,
+          name: `${values.username}`,
+          username: null, // Set username to null for groups
+          image: null, // Set image to null for groups
+          status: null, // Set status to null for groups
+        })
+
         conferencesList.push(xml('conference', { autojoin: 'true', jid: `${values.username}@conference.alumchat.lol` }));
         // Create and send the request to add the bookmark
         const addBmRequest = xml('iq', { type: 'set', id: 'addbookmark-request' }, 
@@ -232,7 +236,6 @@ const AddContact = ({ open, onClose }) => {
         );
         await sendRequest(addBmRequest);
       }
-
       // Dispatch the combined list as contacts
       dispatch(setContacts({ contacts: combinedList }));
       onClose(); // Close the modal after successful submission

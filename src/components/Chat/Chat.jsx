@@ -224,9 +224,6 @@ const Chat = () => {
               ]);
   
               await xmppClient.send(messageRequest);
-              if(isGroupchat) {
-                await xmppClient.send(presenceStanza)
-              }
               console.log('Message with file URL sent');
   
               // Update the chat with the new message
@@ -257,8 +254,6 @@ const Chat = () => {
           xml('request', { xmlns: 'urn:xmpp:receipts' }),
           xml('markable', { xmlns: 'urn:xmpp:chat-markers:0' })
         ]);
-  
-
 
         await xmppClient.send(messageRequest);
         console.log('Message sent');

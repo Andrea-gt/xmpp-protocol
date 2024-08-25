@@ -118,7 +118,7 @@ const Login = ({ status_list, toggleForm }) => {
               const room = rooms.find(c => c.jid === jid);
               console.log(jid, room)
               if (room) {
-                const name_ = stanza.getChild('query').getChild('identity').attrs.name;
+                const name_ = stanza.getChild('query')?.getChild('identity')?.attrs.name ?? null;
                 room.name = name_ ? name_ : 'Groupchat';
               }
           }
