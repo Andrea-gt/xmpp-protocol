@@ -1,3 +1,21 @@
+/**
+ * @file Home.js
+ * @description The Home component serves as the main interface for authenticated users, displaying contact lists and chat functionality.
+ *              It handles incoming notifications, manages XMPP contact requests, and integrates with Redux for state management.
+ *              The component uses Material-UI for layout and styling.
+ * 
+ *              Key functionalities provided by this component include:
+ *              - Displaying and managing contacts and chat interactions.
+ *              - Handling notifications with a Snackbar component.
+ *              - Processing XMPP presence and roster requests.
+ *              - Retrieving and displaying user images and statuses.
+ * 
+ * @author Andrea Ximena Ramirez Recinos
+ * @created Aug 2024
+ * 
+ * @note Documentation Generated with ChatGPT
+ */
+
 import React, { useEffect } from 'react';
 import {
   Box,
@@ -19,6 +37,14 @@ import CloseIcon from '@mui/icons-material/Close';
 import { useXMPP } from '../../context/XMPPContext';
 import { xml } from '@xmpp/client';
 
+/**
+ * Home component that provides the main user interface for displaying contacts and chat.
+ *
+ * @param {Object} props - Component properties.
+ * @param {Array} props.statusList - List of contact statuses.
+ * @param {Array} props.images - List of contact images.
+ * @returns {JSX.Element} - The Home component.
+ */
 const Home = ({ statusList, images }) => {
   const { palette } = useTheme();
   const dispatch = useDispatch();

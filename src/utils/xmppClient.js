@@ -1,10 +1,22 @@
 /**
- * XMPP Client Connection Script
+ * @file xmppClient.js
+ * @description This file contains functions for establishing and managing an XMPP client connection 
+ *              using the @xmpp/client library. It provides functionalities for connecting to the XMPP 
+ *              server, handling connection events, and registering new users.
  * 
- * This script sets up an XMPP client connection using the @xmpp/client library.
- * It includes functions to handle connection events such as online, error, and offline states.
+ *              The `connectXMPP` function sets up the XMPP client with the specified username and password, 
+ *              and manages events related to the connection such as online, error, and offline states.
+ *              The `registerXMPP` function handles user registration with the XMPP server, sending the 
+ *              appropriate registration IQ stanza and managing responses for successful or failed registration.
  * 
- * Documentation Generated with ChatGPT
+ *              Key functionalities provided by this module include:
+ *              - Connecting to the XMPP server and handling connection events.
+ *              - Registering new users with the XMPP server.
+ * 
+ * @author Andrea Ximena Ramirez Recinos
+ * @created Aug 2024
+ * 
+ * @note Documentation Generated with ChatGPT
  */
 
 import { client, xml } from "@xmpp/client";

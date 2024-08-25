@@ -1,10 +1,19 @@
 /**
- * Main Application Component
+ * @file App.jsx
+ * @description The main entry point of the React application. This component configures routing, theming, and context providers.
+ *              It uses Redux for state management and Material-UI for styling. The `App` component sets up routes for different pages,
+ *              applies a theme based on the application's mode, and provides the XMPP context to the component tree.
  * 
- * This component sets up the main structure of the React application. It configures routing,
- * theming, and context providers. It uses Redux for state management and Material-UI for styling.
+ *              Key functionalities provided by this component include:
+ *              - Routing setup using React Router.
+ *              - Theming with Material-UI's `ThemeProvider`.
+ *              - Context provisioning through `XMPPProvider`.
+ *              - Conditional routing based on user authentication status.
  * 
- * Documentation Generated with ChatGPT
+ * @author Andrea Ximena Ramirez Recinos
+ * @created Aug 2024
+ * 
+ * @note Documentation Generated with ChatGPT
  */
 
 import React, { useMemo } from "react";

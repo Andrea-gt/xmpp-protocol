@@ -1,3 +1,27 @@
+/**
+ * @file index.js
+ * @description This file contains the Redux slice for managing chat-related state in the application. 
+ *              The chat slice includes state management for user authentication, contacts, chat sessions, 
+ *              messages, images, statuses, and notifications. It also handles theme mode toggling between 
+ *              light and dark modes.
+ * 
+ *              The slice is created using Redux Toolkit's `createSlice` method, which automatically generates 
+ *              actions and reducers based on the defined initial state and reducer functions.
+ * 
+ *              Key functionalities provided by this slice include:
+ *              - Toggling theme mode (light/dark).
+ *              - Managing user login and logout states.
+ *              - Handling contacts and their statuses.
+ *              - Managing chat sessions and messages.
+ *              - Handling user images and statuses.
+ *              - Managing notifications within the chat.
+ * 
+ * @author Andrea Ximena Ramirez Recinos
+ * @created Aug 2024
+ * 
+ * @note Documentation Generated with ChatGPT
+ */
+
 import { createSlice } from "@reduxjs/toolkit";
 
 // Initial state for the chat slice

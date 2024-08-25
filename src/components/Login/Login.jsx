@@ -1,12 +1,19 @@
 /**
- * Login Page Component
+ * @file Login.js
+ * @description The Login component provides a form for users to log in. It uses Formik for form management, 
+ *              Material-UI for styling, and Redux for state management. Upon successful authentication, 
+ *              it connects to the XMPP server and navigates to the home page.
  * 
- * This component provides a login form for users to enter their credentials. 
- * It uses Formik for form handling and validation, Material-UI for styling, 
- * and Redux for state management. Upon successful login, it connects to the XMPP server
- * and navigates to the home page.
+ *              Key functionalities provided by this component include:
+ *              - Handling user input and form validation.
+ *              - Managing form state with Formik and validation with Yup.
+ *              - Connecting to the XMPP server upon successful login.
+ *              - Navigating to the home page upon successful authentication.
  * 
- * Documentation Generated with ChatGPT
+ * @author Andrea Ximena Ramirez Recinos
+ * @created Aug 2024
+ * 
+ * @note Documentation Generated with ChatGPT
  */
 
 import React, { useEffect, useState } from 'react';
@@ -39,16 +46,20 @@ import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import { useXMPP } from '../../context/XMPPContext';
 import { xml } from '@xmpp/client';
 
-
 // Schema for validating login form fields using Yup
 const loginSchema = yup.object().shape({
   username: yup.string().required("*Required"), // Username is required
   password: yup.string().required("*Required"), // Password is required
 });
 
-// Sleep function using Promise
-const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
-
+/**
+ * Login component that provides the main user interface for user auth.
+ *
+ * @param {Object} props - Component properties.
+ * @param {Array} props.status_list - List of contact statuses.
+ * @param {Array} props.images - List of contact images.
+ * @returns {JSX.Element} - The Login component.
+ */
 const Login = ({ status_list, toggleForm }) => {
   const { palette } = useTheme(); // Retrieve theme palette from Material-UI
   const dispatch = useDispatch(); // Get dispatch function from Redux

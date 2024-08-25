@@ -1,3 +1,29 @@
+/**
+ * @file theme.js
+ * @description This file contains the configuration for the application's theme settings. 
+ *              It defines color tokens and provides theme settings for light and dark modes 
+ *              using the `themeSettings` function.
+ * 
+ *              The `colorTokens` object specifies various color palettes used throughout 
+ *              the application, including shades of grey, whites, and primary and secondary 
+ *              colors. These color tokens are used to maintain consistent styling and allow 
+ *              easy updates to the color scheme.
+ * 
+ *              The `themeSettings` function returns a theme configuration object based on the 
+ *              specified mode (light or dark). It configures the color palette, typography, 
+ *              and background colors to create a cohesive design for the application.
+ * 
+ *              Key functionalities provided by this file include:
+ *              - Defining color tokens for consistent styling.
+ *              - Configuring theme settings for both light and dark modes.
+ *              - Setting typography styles for different text elements.
+ * 
+ * @author Andrea Ximena Ramirez Recinos
+ * @created Aug 2024
+ * 
+ * @note Documentation Generated with ChatGPT
+ */
+
 export const colorTokens = {
     grey: {
       0: "#FFFFFF",
