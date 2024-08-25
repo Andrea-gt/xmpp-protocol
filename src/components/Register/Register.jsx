@@ -1,3 +1,20 @@
+/**
+ * @file Register.jsx
+ * @description The Register component provides a registration form for new users to create an account. 
+ *              It utilizes Formik for form handling and validation, Material-UI for styling, 
+ *              and integrates XMPP client functionality for user registration.
+ * 
+ *              Key functionalities provided by this component include:
+ *              - Form validation and submission using Yup and Formik.
+ *              - Error handling and display using Material-UI's Alert component.
+ *              - The ability to toggle between the registration and login forms.
+ * 
+ * @author Andrea Ximena Ramirez Recinos
+ * @created Aug 2024
+ * 
+ * @note Documentation Generated with ChatGPT
+ */
+
 import React, { useEffect, useState } from 'react';
 import {
   Box,
@@ -23,6 +40,20 @@ const registerSchema = yup.object().shape({
   password: yup.string().required("*Required"), // Password is required
 });
 
+/**
+ * Register component that provides the user interface for new user registration.
+ *
+ * This component includes:
+ * - A form with fields for full name, username, and password.
+ * - Validation rules to ensure all fields are filled out.
+ * - Error handling and display for registration failures.
+ * - The ability to toggle between registration and login forms.
+ * - Integration with an XMPP client for user registration.
+ *
+ * @param {Object} props - Component properties.
+ * @param {Function} props.toggleForm - Function to toggle between the registration and login forms.
+ * @returns {JSX.Element} - The Register component.
+ */
 const Register = ({ toggleForm }) => {
   const { palette } = useTheme(); // Retrieve theme palette from Material-UI
   const [errorMessage, setErrorMessage] = React.useState(''); // State for managing error messages

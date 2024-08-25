@@ -1,3 +1,23 @@
+/**
+ * @file Navbar.jsx
+ * @description The Navbar component provides a navigation bar for the XmppClient application. It includes:
+ *              - A user avatar with a status indicator (Do Not Disturb, Available, Away, Extended Away).
+ *              - A menu for managing contacts, editing status, logging out, and deleting the account.
+ *              - Handling state for menu visibility and modals.
+ *              - Integration with Redux for user state management and XMPP context for client actions.
+ * 
+ *              Key functionalities provided by this component include:
+ *              - Displaying user information and avatar with status.
+ *              - Opening and closing menus for various actions.
+ *              - Handling user logout and account deletion.
+ *              - Providing modals for adding contacts and editing status.
+ * 
+ * @author Andrea Ximena Ramirez Recinos
+ * @created Aug 2024
+ * 
+ * @note Documentation Generated with ChatGPT
+ */
+
 import React, { useState } from 'react';
 import {
   Box,
@@ -65,24 +85,47 @@ const Navbar = () => {
   const images = useSelector((state) => state.images);
   const status_list = useSelector((state) => state.statusList);
 
+
+  /**
+   * Gets the user's avatar image based on their JID.
+   * @param {string} jid - The JID of the user.
+   * @returns {string} - The URL of the user's avatar image.
+   */
   const getImageByJid = (jid) => {
     const image = images.find(img => img.jid === jid);
     return image ? image.image : '';
   };
 
+  /**
+   * Gets the user's status based on their JID.
+   * @param {string} jid - The JID of the user.
+   * @returns {Object|null} - The user's status object or null if not found.
+   */
   const getStatusByJid = (jid) => {
     const status_ = status_list.find(status => status.jid === jid);
     return status_ ? status_ : null;
   };
   
+  /**
+   * Handles the click event to open the menu.
+   * @param {Object} event - The click event object.
+   */
   const handleClick = (event) => {
     setAnchorEl(event.currentTarget);
   };
 
+  /**
+   * Closes the menu.
+   */
   const handleClose = () => {
     setAnchorEl(null);
   };
 
+  /**
+   * Handles the logout process.
+   * Stops the XMPP client, dispatches the logout action, and navigates to the home page.
+   * Displays an error message if logout fails.
+  */
   const handleLogout = async () => {
     try {
       if (xmppClient) {
@@ -98,11 +141,19 @@ const Navbar = () => {
     }
   };
 
+  /**
+   * Handles opening the EditStatus modal.
+   */
   const handleEditStatus = async () => {
       handleClose(); // Close the menu
       setEditStatus(true); // Open the editStatus modal
   };
 
+  /**
+   * Handles the account deletion process.
+   * Sends a deletion request to the XMPP server, stops the XMPP client, and logs out the user.
+   * Displays an error message if deletion fails.
+   */
   const handleDelete = async () => {
     if (!xmppClient) {
       console.error('XMPP client is not connected');

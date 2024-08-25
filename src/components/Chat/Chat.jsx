@@ -1,9 +1,14 @@
 /**
- * @file Chat.js
- * @description Chat component for displaying and sending messages in a chat interface.
- * This component handles the chat interface, including displaying individual chat messages
- * and providing functionality for sending messages and attaching files. The component
- * integrates with the XMPP protocol for real-time messaging.
+ * @file Chat.jsx
+ * @description The Chat component provides an interface for displaying and sending messages in a chat application. 
+ *              This component manages the chat UI, including showing individual messages and allowing users 
+ *              to send text messages and attach files. It integrates with the XMPP protocol for real-time messaging.
+ * 
+ *              Key functionalities of this component include:
+ *              - Displaying a list of chat messages, with differentiation for messages from the current user.
+ *              - Handling file attachments and uploading them to a specified URL.
+ *              - Sending text messages and file URLs to the XMPP server.
+ *              - Updating the Redux store with new messages.
  * 
  * @dependencies:
  * - @mui/material
@@ -11,8 +16,12 @@
  * - react-redux
  * - @xmpp/client
  * 
- * Documentation Generated with ChatGPT
- * @date 2024-08-19
+ * @returns {JSX.Element} The rendered Chat component.
+ * 
+ * @author Andrea Ximena Ramirez Recinos
+ * @created Aug 2024
+ * 
+ * @note Documentation Generated with ChatGPT
  */
 
 import React, { useState, useEffect } from 'react';

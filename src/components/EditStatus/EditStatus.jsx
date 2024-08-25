@@ -1,3 +1,26 @@
+/**
+ * @file EditStatus.js
+ * @description The EditStatus component provides a modal for users to update their presence status in the XmppClient application. 
+ *              It uses Formik for form management and Yup for validation. The component allows users to select a status type 
+ *              and enter a status message, which is then sent to the XMPP server.
+ * 
+ *              Key functionalities provided by this component include:
+ *              - Displaying a modal with a form to edit the user's status.
+ *              - Validating user input using Yup.
+ *              - Sending the updated status to the XMPP server via the XMPP client.
+ *              - Updating the Redux store with the new status.
+ * 
+ * @param {Object} props - Component properties.
+ * @param {boolean} props.open - Controls whether the modal is open or closed.
+ * @param {Function} props.onClose - Function to handle closing the modal.
+ * 
+ * @returns {JSX.Element} - The EditStatus component.
+ * 
+ * @author Andrea Ximena Ramirez Recinos
+ * @created Aug 2024
+ * 
+ * @note Documentation Generated with ChatGPT
+ */
 import React from 'react';
 import { Box, Typography, Button, Modal, useTheme, TextField, MenuItem } from '@mui/material';
 import { Formik, Form, Field } from 'formik';
@@ -6,6 +29,34 @@ import { useXMPP } from '../../context/XMPPContext';
 import { useDispatch, useSelector } from 'react-redux';
 import { updateContactStatus } from '../../state';
 import { xml } from '@xmpp/client';
+
+/**
+ * EditStatus component that provides a modal for users to update their presence status.
+ *
+ * @param {Object} props - Component properties.
+ * @param {boolean} props.open - Indicates whether the modal is open or closed.
+ * @param {Function} props.onClose - Function to handle closing the modal.
+ * 
+ * @returns {JSX.Element} - The EditStatus modal component.
+ * 
+ * @component
+ * 
+ * @description
+ * The EditStatus component renders a modal dialog where users can select a new status type and enter a status message. 
+ * It uses Formik for form management and Yup for form validation. Upon submission, the component sends the updated 
+ * status to the XMPP server using the XMPP client and updates the Redux store with the new status.
+ * 
+ * The component includes:
+ * - A select field for choosing the status type (e.g., Available, Away, Do Not Disturb, Extended Away).
+ * - A text field for entering a custom status message.
+ * - Submit and cancel buttons to handle form submission and modal dismissal.
+ * 
+ * @example
+ * <EditStatus open={isModalOpen} onClose={handleCloseModal} />
+ * 
+ * @see {@link https://formik.org/docs} for Formik documentation.
+ * @see {@link https://github.com/jquense/yup} for Yup documentation.
+ */
 
 const EditStatus = ({ open, onClose }) => {
   const { palette } = useTheme(); // Get theme palette from Material-UI

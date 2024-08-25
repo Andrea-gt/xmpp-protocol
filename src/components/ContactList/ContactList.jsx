@@ -1,20 +1,25 @@
 /**
- * ContactList Component
+ * @file EditStatus.jsx
+ * @description The EditStatus component provides a modal for users to update their presence status in the XmppClient application. 
+ *              It uses Formik for form management and Yup for validation. The component allows users to select a status type 
+ *              and enter a status message, which is then sent to the XMPP server.
  * 
- * This component renders a list of user contacts with their respective statuses.
- * Each contact is displayed with an avatar and a status indicator.
- * If there are no contacts available, a message is displayed.
+ *              Key functionalities provided by this component include:
+ *              - Displaying a modal with a form to edit the user's status.
+ *              - Validating user input using Yup.
+ *              - Sending the updated status to the XMPP server via the XMPP client.
+ *              - Updating the Redux store with the new status.
  * 
- * Dependencies:
- * - @mui/material
+ * @param {Object} props - Component properties.
+ * @param {boolean} props.open - Controls whether the modal is open or closed.
+ * @param {Function} props.onClose - Function to handle closing the modal.
  * 
- * @component
- * @example
- * return <ContactList />;
+ * @returns {JSX.Element} - The EditStatus component.
  * 
- * @returns {JSX.Element} The ContactList component
+ * @author Andrea Ximena Ramirez Recinos
+ * @created Aug 2024
  * 
- * Documentation Generated with ChatGPT
+ * @note Documentation Generated with ChatGPT
  */
 
 import React, { useEffect } from 'react';
