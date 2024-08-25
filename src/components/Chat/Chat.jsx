@@ -113,7 +113,6 @@ const Chat = () => {
   const chat_jid = useSelector((state) => state.chat_jid); // Get the chat JID from Redux store
   const { xmppClient } = useXMPP(); // Get the XMPP client from context
   const isGroupchat = chat_jid?.includes("conference")
-  const presenceStanza = xml('presence', { to: `${chat_jid}/${username}@alumchat.lol`});
 
   /**
    * Filters messages relevant to the current chat between the user and the chat_jid.
@@ -175,6 +174,13 @@ const Chat = () => {
     }
   };
 
+  useEffect(() => {
+    const presenceStanza = xml('presence', { to: `${chat_jid}/${username}` });
+    // Send presence when the component mounts
+    if (isGroupchat && xmppClient) {
+      xmppClient.send(presenceStanza).catch(console.error);
+    }
+  }, [chat_jid, username, xmppClient, isGroupchat]);
 
   /**
    * Handles message submission by sending the message or file via XMPP.
@@ -252,9 +258,7 @@ const Chat = () => {
           xml('markable', { xmlns: 'urn:xmpp:chat-markers:0' })
         ]);
   
-        if(isGroupchat){
-          await xmppClient.send(presenceStanza)
-        }
+
 
         await xmppClient.send(messageRequest);
         console.log('Message sent');

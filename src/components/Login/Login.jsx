@@ -116,6 +116,7 @@ const Login = ({ status_list, toggleForm }) => {
               console.log(stanza);
               const jid = stanza.attrs.from;
               const room = rooms.find(c => c.jid === jid);
+              console.log(jid, room)
               if (room) {
                 const name_ = stanza.getChild('query').getChild('identity').attrs.name;
                 room.name = name_ ? name_ : 'Groupchat';
@@ -232,7 +233,7 @@ const Login = ({ status_list, toggleForm }) => {
                 complete_from: stanza.attrs.from
               };
 
-              console.log(message.complete_from.split('/')[1]?.split('@')[0])
+              console.log(message.complete_from)
 
               // Set Snackbar message and open it
               dispatch(setNotification({ notification: `New message from ${message.from}`, type: 'message', from: message.from }));

@@ -29,7 +29,7 @@ const AddContact = ({ open, onClose }) => {
   const images = useSelector((state) => state.images); // Access images from Redux store
   const statusList = useSelector((state) => state.statusList); // Access status list from Redux store
   const dispatch = useDispatch(); // Get dispatch function from Redux
-
+  const username = useSelector((state) => state.user); // Get the current username from Redux store
   const [actionType, setActionType] = useState('contact'); // State to manage action type (contact or group)
   const [initialValues, setInitialValues] = useState(contactInitialValues); // State for initial form values
   const formikRef = useRef(); // Reference to the Formik instance
@@ -60,112 +60,132 @@ const AddContact = ({ open, onClose }) => {
 
   // Handle form submission
   const handleSubmit = async (values, { setSubmitting }) => {
-    let request;
     let contacts = [];
-    let rooms = [];
+    let combinedList = []; // This will include both contacts and groups
   
     try {
+      // Helper function to send stanzas and wait for responses
+      const sendRequest = (request) => {
+        return new Promise((resolve, reject) => {
+          const handleStanza = (stanza) => {
+            if (stanza.attrs.id === request.attrs.id) {
+              xmppClient.off('stanza', handleStanza);
+              resolve(stanza);
+              console.log("RECIEVED", stanza)
+            }
+          };
+          xmppClient.on('stanza', handleStanza);
+          xmppClient.send(request).catch(reject);
+        });
+      };
+  
       if (actionType === 'contact') {
-        // Create an XMPP IQ stanza to request adding a contact
-        request = xml('iq', { type: 'set', id: 'add-user' }, [
+        // Create and send the request to add a contact
+        const contactRequest = xml('iq', { type: 'set', id: 'add-user' }, [
           xml('query', { xmlns: 'jabber:iq:roster' }, [
             xml('item', { jid: `${values.username}@alumchat.lol`, subscription: 'both' })
           ])
         ]);
+
+        await sendRequest(contactRequest);
   
-        // Create presence stanzas for subscription request
-        const subscribeRequest = xml('presence', { type: 'subscribe', to: `${values.username}@alumchat.lol` });
-        const subscribedResponse = xml('presence', { type: 'subscribed', to: `${values.username}@alumchat.lol` });
-  
-        await xmppClient.send(request);
+        // Send presence stanzas for subscription
+        const subscribeRequest = xml('presence', { id: 'suscribe-request', type: 'subscribe', to: `${values.username}@alumchat.lol` });
+        const subscribedResponse = xml('presence', { id: 'suscribed-request', type: 'subscribed', to: `${values.username}@alumchat.lol` });
+
+        console.log('buenas tardes')
         await xmppClient.send(subscribeRequest);
         await xmppClient.send(subscribedResponse);
-  
         console.log('Contact added successfully');
+
       } else if (actionType === 'group') {
-        console.log(values);
-        // Create an XMPP IQ stanza to create a group chat
-        request = xml('iq', { type: 'set', id: 'create-groupchat' }, [
-          xml('query', { xmlns: 'http://jabber.org/protocol/muc#owner' }, [
-            xml('x', { xmlns: 'jabber:x:data', type: 'submit' }, [
-              xml('field', { var: 'FORM_TYPE', type: 'hidden' }, [
-                xml('value', 'http://jabber.org/protocol/muc#roomconfig')
-              ]),
-              xml('field', { var: 'muc#roomconfig_roomname' }, [
-                xml('value', values.username) // Use username as room name
-              ])
-            ])
-          ])
-        ]);
-  
-        await xmppClient.send(request);
+        // Create and send the request to create a group chat
+        const groupRequest = xml('iq', { to: `${values.username}@conference.alumchat.lol`, type: 'get', id: 'creategc-request' },
+          xml('query', 'http://jabber.org/protocol/disco#info')
+        );
+        const groupResponse = await sendRequest(groupRequest);
         console.log('Group chat created successfully');
+  
+        // Join the group chat
+        const joinRequest = xml('presence', { id: 'joingc-request', to: `${values.username}@conference.alumchat.lol/${username}` },
+          xml('x', { xmlns: 'http://jabber.org/protocol/muc' }));
+        await sendRequest(joinRequest);
+  
+        // If the group exists, configure the room
+        if (groupResponse.getChild('query').getChild('identity')) {
+          const configurationRequest = xml('iq', { to: `${values.username}@conference.alumchat.lol`, type: 'get', id: 'room-configuration' },
+            xml('query', { xmlns: 'http://jabber.org/protocol/muc#owner' }));
+          await sendRequest(configurationRequest);
+  
+          // Configure the room to be public and persistent
+          const publicRequest = xml('iq', { 
+            to: `${values.username}@conference.alumchat.lol`, type: 'set', id: 'public-request' 
+          },
+          xml('query', { xmlns: 'http://jabber.org/protocol/muc#owner' }, 
+            xml('x', { xmlns: 'jabber:x:data', type: 'submit' }, 
+              xml('field', { var: 'FORM_TYPE', type: 'hidden' }, 
+                xml('value', {}, 'http://jabber.org/protocol/muc#roomconfig')
+              ),
+              xml('field', { var: 'muc#roomconfig_roomname', type: "text-single", label: "Room Name" }, 
+                xml('value', {}, values.username)
+              ),
+              xml('field', { var: 'muc#roomconfig_publicroom', type: "text-single", label: "List Room in Directory" }, 
+                xml('value', {}, 1)
+              ),
+              xml('field', { var: 'muc#roomconfig_persistentroom', type: "text-single", label: "Room is Persistent" }, 
+                xml('value', {}, 1)
+              )
+            )
+          ));
+          await sendRequest(publicRequest);
+        }
       }
   
       // Request the contact list
-      const rosterRequest = xml('iq', { type: 'get', id: 'roster-request' }, [xml('query', { xmlns: 'jabber:iq:roster' })]);
-      // Create IQ stanza to request list of rooms the user is in
-      const requestRooms = xml('iq', { type: 'get', id: 'rooms-request' }, xml('query', 'jabber:iq:private', xml('storage', 'storage:bookmarks')));
-      // Send the requests to the server
-      await xmppClient.send(rosterRequest);
-      await xmppClient.send(requestRooms);
+      const rosterRequest = xml('iq', { type: 'get', id: 'roster-request' }, [
+        xml('query', { xmlns: 'jabber:iq:roster' })
+      ]);
+
+      const rosterResponse = await sendRequest(rosterRequest);
   
-      // Function to handle stanza responses
-      const handleStanza = (stanza) => {
-        if (stanza.is("iq")) {
-          if (stanza.attrs.id === 'roster-request') {
-            const query = stanza.getChild('query');
-            const items = query.getChildren('item');
-            contacts = items.map(item => ({
-              jid: item.attrs.jid,
-              name: item.attrs.name || 'No name',
-              username: item.attrs.jid.split('@')[0],
-              image: getImageByJid(item.attrs.jid),
-              status: getStatusByJid(item.attrs.jid),
-            }));
-          } else if (stanza.attrs.id === 'rooms-request') {
-            console.log(stanza);
-            const items = stanza.getChild('query').getChild('storage').getChildren('conference');
-            rooms = items.map(item => ({
-              jid: item.attrs.jid,
-              name: "", // Placeholder for group name
-            }));
-            // Request details for each group chat
-            rooms.forEach(chat => {
-              xmppClient.send(xml('iq', { type: 'get', id: `gcinformation-request`, to: chat.jid },
-                xml('query', 'http://jabber.org/protocol/disco#info')
-              ));
-            });
-          } else if (stanza.attrs.id.startsWith('gcinformation-request')) {
-            console.log(stanza);
-            const jid = stanza.attrs.from;
-            const room = rooms.find(c => c.jid === jid);
-            if (room) {
-              const name_ = stanza.getChild('query').getChild('identity').attrs.name;
-              room.name = name_ ? name_ : 'Groupchat';
-            }
-          }
-        }
-      };
+      // Extract contacts from the response
+      const rosterItems = rosterResponse.getChild('query').getChildren('item');
+      contacts = rosterItems.map(item => ({
+        jid: item.attrs.jid,
+        name: item.attrs.name || 'No name',
+        username: item.attrs.jid.split('@')[0],
+        image: getImageByJid(item.attrs.jid),
+        status: getStatusByJid(item.attrs.jid),
+      }));
   
-      // Register the stanza handler
-      xmppClient.on('stanza', handleStanza);
+      // Request the list of rooms the user is in
+      const roomsRequest = xml('iq', { type: 'get', id: 'add-rooms-request' }, 
+        xml('query', 'jabber:iq:private', xml('storage', 'storage:bookmarks'))
+      );
+
+      const roomsResponse = await sendRequest(roomsRequest);
+      console.log(roomsResponse)
   
-      // Wait until all room details are received
-      await new Promise((resolve) => {
-        const interval = setInterval(() => {
-          if (rooms.every(room => room.name)) {
-            clearInterval(interval);
-            resolve();
-          }
-        }, 100); // Check every 100ms
-      });
+      // Extract rooms from the response
+      let rooms = [];
+      const roomItems = roomsResponse.getChild('query').getChild('storage').getChildren('conference');
+      rooms = roomItems.map(item => ({
+        jid: item.attrs.jid,
+        name: "", // Placeholder for group name
+      }));
   
-      // Unregister the stanza handler
-      xmppClient.off('stanza', handleStanza);
+      // Request details for each group chat and update room names
+      await Promise.all(rooms.map(async (room) => {
+        const roomInfoRequest = xml('iq', { type: 'get', id: `gcinformation-request`, to: room.jid },
+          xml('query', 'http://jabber.org/protocol/disco#info')
+        );
+        const roomInfoResponse = await sendRequest(roomInfoRequest);
+        const name_ = roomInfoResponse.getChild('query').getChild('identity').attrs.name;
+        room.name = name_ || 'Groupchat';
+      }));
   
-      // Combine contacts and group chats
-      const combinedList = [
+      // Combine contacts and rooms into a single list
+      combinedList = [
         ...contacts,
         ...rooms.map(room => ({
           jid: room.jid,
@@ -176,6 +196,43 @@ const AddContact = ({ open, onClose }) => {
         }))
       ];
   
+      // Create the conferencesList array for adding bookmarks
+      const conferencesList = rooms
+        .map(group => xml('conference', { autojoin: 'true', jid: group.jid }));
+  
+      console.log(combinedList)
+      console.log(rooms)
+      console.log(conferencesList, "LISTA DE CONFERENCIAS")
+
+      // Add the current user's conference room
+      if(actionType === 'group'){
+        conferencesList.push(xml('conference', { autojoin: 'true', jid: `${values.username}@conference.alumchat.lol` }));
+        // Create and send the request to add the bookmark
+        const addBmRequest = xml('iq', { type: 'set', id: 'addbookmark-request' }, 
+          xml('pubsub', { xmlns: 'http://jabber.org/protocol/pubsub' }, 
+            xml('publish', { node: 'storage:bookmarks' }, 
+              xml('item', { id: 'current' }, 
+                xml('storage', { xmlns: 'storage:bookmarks' }, ...conferencesList)
+              )
+            ),
+            xml('publish-options', {}, 
+              xml('x', { xmlns: 'jabber:x:data', type: 'submit' }, 
+                xml('field', { var: 'FORM_TYPE', type: 'hidden' }, 
+                  xml('value', {}, 'http://jabber.org/protocol/pubsub#publish-options')
+                ),
+                xml('field', { var: 'pubsub#persist_items' }, 
+                  xml('value', {}, '1')
+                ),
+                xml('field', { var: 'pubsub#access_model' }, 
+                  xml('value', {}, 'whitelist')
+                )
+              )
+            )
+          )
+        );
+        await sendRequest(addBmRequest);
+      }
+
       // Dispatch the combined list as contacts
       dispatch(setContacts({ contacts: combinedList }));
       onClose(); // Close the modal after successful submission
