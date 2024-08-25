@@ -113,7 +113,7 @@ const AddContact = ({ open, onClose }) => {
         await sendRequest(joinRequest);
   
         // If the group exists, configure the room
-        if (groupResponse.getChild('query').getChild('identity')) {
+        if (!groupResponse.getChild('query').getChild('identity')) {
           const configurationRequest = xml('iq', { to: `${values.username}@conference.alumchat.lol`, type: 'get', id: 'room-configuration' },
             xml('query', { xmlns: 'http://jabber.org/protocol/muc#owner' }));
           await sendRequest(configurationRequest);
